@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KoboSync — Bulk Uploader</title>
+<style>
+:root {
+  --bg: #0d1117; --surf: #161b22; --surf2: #1c2128;
+  --bdr: #30363d; --bdr2: #21262d;
+  --txt: #e6edf3; --muted: #8b949e; --dim: #6e7681;
+  --green: #10b981; --green-bg: #0a2015; --green-bdr: #10b98133;
+  --amber: #f59e0b; --amber-bg: #1a1000; --amber-bdr: #f59e0b33;
+  --red: #ef4444; --red-bg: #1a0a0a; --red-bdr: #ef444433;
+  --blue: #3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px;}
+a{color:var(--green);text-decoration:none;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--green),#059669);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.nav-title{font-weight:700;font-size:15px;}
+.nav-sub{color:var(--dim);font-size:11px;margin-top:1px;}
+.btn-icon{background:transparent;border:1px solid var(--bdr);color:var(--muted);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:15px;line-height:1;}
+.btn-icon:hover{border-color:var(--muted);color:var(--txt);}
+
+/* MAIN */
+.main{max-width:860px;margin:0 auto;padding:24px 20px;}
+
+/* STEPS */
+.steps{display:flex;align-items:center;margin-bottom:24px;}
+.step{display:flex;align-items:center;gap:7px;font-size:12px;cursor:default;}
+.step-num{width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);color:var(--dim);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.step-lbl{color:var(--dim);white-space:nowrap;transition:color .2s;}
+.step.active .step-num{border-color:var(--green);color:var(--green);}
+.step.active .step-lbl{color:var(--txt);}
+.step.done .step-num{background:var(--green);border-color:var(--green);color:#fff;}
+.step.done .step-lbl{color:var(--green);}
+.step-line{flex:1;height:1px;background:var(--bdr);margin:0 8px;}
+
+/* CARD */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:14px;}
+.card-head{font-weight:600;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* FORM CONTROLS */
+.lbl{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:5px;}
+.inp,.sel{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:6px;color:var(--txt);padding:9px 12px;font-size:13px;font-family:inherit;transition:border-color .15s;}
+.inp:focus,.sel:focus{outline:none;border-color:var(--green);}
+.sel{cursor:pointer;appearance:auto;}
+.sel option{background:var(--surf);}
+.inp-row{display:flex;gap:8px;}
+.inp-row .inp{flex:1;}
+.fg{margin-bottom:14px;}
+.helper{font-size:11px;color:var(--dim);margin-top:4px;}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:7px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#059669;}
+.btn-green:disabled{background:var(--green-bg);color:#3a5a40;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--muted);border:1px solid var(--bdr);}
+.btn-outline:hover{border-color:var(--muted);color:var(--txt);}
+.btn-amber{background:var(--amber);color:#000;}
+.btn-amber:hover{background:#d97706;}
+
+/* BADGE */
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
+.bg{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+.ba{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
+.br{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
+.bb{background:#0c1a30;border:1px solid #3b82f633;color:var(--blue);}
+
+/* ALERTS */
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;line-height:1.5;}
+.alert-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+.alert-a{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
+.alert-r{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
+.alert p{margin:4px 0 0;}
+
+/* DROPZONE */
+.dropzone{border:2px dashed var(--bdr);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .15s;}
+.dropzone:hover,.dropzone.over{border-color:var(--green);background:var(--green-bg);}
+.dz-icon{font-size:30px;margin-bottom:8px;}
+.dz-txt{font-size:13px;color:var(--muted);}
+.dz-txt strong{color:var(--txt);}
+.dz-sub{font-size:11px;color:var(--dim);margin-top:4px;}
+
+/* FIELD MAPPING */
+.map-row{display:grid;grid-template-columns:1fr 28px 1.4fr;align-items:start;gap:8px;padding:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:7px;margin-bottom:6px;}
+.map-row.enroll-row{background:#0a1208;border-color:var(--green-bdr);}
+.map-fld-name{font-size:12px;color:var(--dim);font-family:monospace;margin-top:2px;}
+.map-fld-lbl{font-size:13px;font-weight:500;}
+.map-arrow{text-align:center;color:var(--bdr);font-size:18px;padding-top:6px;}
+.map-sel{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:5px;color:var(--txt);padding:7px 8px;font-size:12px;font-family:inherit;}
+.map-sel:focus{outline:none;border-color:var(--green);}
+.map-manual{width:100%;background:var(--surf2);border:1px solid var(--bdr2);border-radius:5px;color:var(--txt);padding:5px 8px;font-size:11px;font-family:inherit;margin-top:5px;}
+.map-manual:focus{outline:none;border-color:var(--green);}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:8px 12px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--bdr);background:var(--bg);white-space:nowrap;}
+td{padding:7px 12px;border-bottom:1px solid var(--bdr2);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surf2);}
+
+/* STATS */
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;flex:1;min-width:70px;text-align:center;}
+.stat-v{font-size:22px;font-weight:700;line-height:1;}
+.stat-l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+
+/* PROGRESS */
+.prog-wrap{margin:10px 0;}
+.prog-bar{height:6px;background:var(--bdr);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--green);transition:width .3s;border-radius:3px;}
+.prog-txt{font-size:12px;color:var(--muted);margin-top:5px;}
+
+/* RESULTS */
+.res-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr2);font-size:12px;}
+.res-item:last-child{border-bottom:none;}
+.res-icon{width:20px;text-align:center;flex-shrink:0;}
+.res-sub{color:var(--dim);font-size:11px;font-family:monospace;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:22px;width:100%;max-width:460px;}
+.modal-title{font-weight:700;font-size:15px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:12px;}
+.tab{padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid transparent;font-weight:500;}
+.tab.on{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green);}
+.tab:not(.on){color:var(--muted);}
+.tab:not(.on):hover{border-color:var(--bdr);color:var(--txt);}
+
+/* UTIL */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.action-bar{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--bdr);}
+.hidden{display:none!important;}
+.sep{color:var(--dim);margin:0 6px;}
+.chip{display:inline-block;padding:3px 8px;border-radius:5px;font-size:11px;font-family:monospace;margin:2px;}
+.chip-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+.chip-a{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.g2{grid-template-columns:1fr;}.steps .step-lbl{display:none;}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block;}
+pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;background:var(--bg);padding:10px;border-radius:6px;margin-top:8px;white-space:pre-wrap;word-break:break-all;}
+</style>
+</head>
+<body>
+
+<!-- Settings Modal -->
+<div class="overlay hidden" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">⚙️ Settings</div>
+    <div class="fg">
+      <label class="lbl">KoboToolbox Server URL</label>
+      <input class="inp" id="cfgServer" value="https://kobo.eu.kobotoolbox.org" />
+    </div>
+    <div class="fg">
+      <label class="lbl">API Token</label>
+      <input class="inp" id="cfgToken" type="password" placeholder="Paste your API token..." />
+      <div class="helper">Get it at: <strong>[your server]/token/</strong></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-green" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">📤</div>
+    <div>
+      <div class="nav-title">KoboSync</div>
+      <div class="nav-sub" id="serverLabel">kobo.eu.kobotoolbox.org</div>
+    </div>
+  </div>
+  <div class="row" style="gap:8px;">
+    <span id="tokenStatus" class="badge ba">No token</span>
+    <button class="btn-icon" onclick="openSettings()" title="Settings">⚙️</button>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Step Indicator -->
+  <div class="steps" id="stepsEl">
+    <div class="step active" id="si1"><div class="step-num">1</div><div class="step-lbl">Load Form</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="si2"><div class="step-num">2</div><div class="step-lbl">Upload File</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="si3"><div class="step-num">3</div><div class="step-lbl">Map Columns</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="si4"><div class="step-num">4</div><div class="step-lbl">Push</div></div>
+  </div>
+
+  <!-- ── Step 1: Load Form ────────────────────────────────── -->
+  <div id="p1">
+    <div class="card">
+      <div class="card-head">📋 Load KoboToolbox Form</div>
+      <div id="noTokenWarn" class="alert alert-a hidden">⚠️ No API token set — click ⚙️ in the top right to add yours.</div>
+      <div class="fg">
+        <label class="lbl">Form / Asset UID</label>
+        <div class="inp-row">
+          <input class="inp" id="assetUid" placeholder="e.g. aXXXXXXXXXXXXXXXXXXXXXX" />
+          <button class="btn btn-green" id="loadBtn" onclick="loadForm()">Load Form</button>
+        </div>
+        <div class="helper">Find it in the URL when viewing your form: /forms/<strong>[UID]</strong>/summary</div>
+      </div>
+      <div id="loadResult"></div>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Upload File ─────────────────────────────── -->
+  <div id="p2" class="hidden">
+    <div class="card">
+      <div class="card-head">
+        📁 Upload Data File
+        <span class="badge bg" id="formNameBadge">—</span>
+      </div>
+
+      <!-- Mode tabs -->
+      <div class="tabs">
+        <div class="tab on" id="tabBatch" onclick="setMode('batch')">
+          Batch Mode &nbsp;<span class="badge bg">all rows = 1 submission</span>
+        </div>
+        <div class="tab" id="tabPerRow" onclick="setMode('perrow')">
+          Per-Row Mode &nbsp;<span class="badge ba">each row = 1 submission</span>
+        </div>
+      </div>
+      <div class="alert alert-a" id="modeHint" style="font-size:12px;"></div>
+
+      <!-- Dropzone -->
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div class="dz-icon">📂</div>
+        <div class="dz-txt"><strong>Click to browse</strong> or drag & drop</div>
+        <div class="dz-sub">CSV · Excel (.xlsx / .xls)</div>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="hidden" />
+
+      <div id="filePrev" class="hidden" style="margin-top:14px;">
+        <div id="fileStats" style="margin-bottom:10px;font-size:13px;"></div>
+        <div class="tbl-wrap" id="prevTable"></div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-green hidden" id="s2next" onclick="goStep(3)">Map Columns →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 3: Map Columns ─────────────────────────────── -->
+  <div id="p3" class="hidden">
+    <div class="card">
+      <div class="card-head">🔀 Map Columns to Form Fields</div>
+
+      <!-- Batch config (only in batch mode with repeats) -->
+      <div id="batchCfg" class="hidden">
+        <div class="fg">
+          <label class="lbl">Rows represent entries in repeat group:</label>
+          <select class="sel" id="repeatSel"></select>
+        </div>
+        <div class="card-head" style="font-size:13px;margin-top:4px;">
+          📋 Enrollment-Level Fields
+          <span class="badge ba">taken from row 1 or enter manually</span>
+        </div>
+        <div id="enrollMap"></div>
+        <div class="card-head" style="font-size:13px;margin-top:14px;">👤 Repeat / Student Fields</div>
+      </div>
+
+      <div id="mainMap"></div>
+
+      <div class="action-bar">
+        <button class="btn btn-outline" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-green" onclick="goStep(4)">Preview & Push →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Push ────────────────────────────────────── -->
+  <div id="p4" class="hidden">
+    <div class="card">
+      <div class="card-head">🚀 Review & Push</div>
+
+      <div id="pushSummary"></div>
+
+      <div id="pushProg" class="hidden">
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+          <div class="prog-txt" id="progTxt">Preparing…</div>
+        </div>
+      </div>
+
+      <div id="pushRes" class="hidden"></div>
+
+      <div class="action-bar">
+        <button class="btn btn-outline" id="s4back" onclick="goStep(3)">← Back</button>
+        <div class="row">
+          <button class="btn btn-outline" onclick="downloadXMLs()">⬇ Download XML</button>
+          <button class="btn btn-green" id="pushBtn" onclick="startPush()">Push to KoboToolbox →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  ↓↓↓  HARDCODE YOUR TOKEN HERE  ↓↓↓
+// ═══════════════════════════════════════════════════════════════
+const FIXED_TOKEN = "";
+const DEFAULT_SERVER = "https://kobo.eu.kobotoolbox.org";
+// ═══════════════════════════════════════════════════════════════
+
+// ── Config ──────────────────────────────────────────────────────
+let CFG = { server: DEFAULT_SERVER, token: FIXED_TOKEN };
+try {
+  const s = localStorage.getItem("kobosync_cfg");
+  if (s) { const c = JSON.parse(s); CFG.server = c.server||CFG.server; CFG.token = c.token||CFG.token; }
+} catch(e){}
+if (FIXED_TOKEN) CFG.token = FIXED_TOKEN;
+
+// ── App State ────────────────────────────────────────────────────
+const S = {
+  form: null,       // { uid, name, idString, survey, choices }
+  tree: null,       // parsed tree
+  fields: [],       // flat field list [{name, label, type, group, repeatGroup, required}]
+  repeats: [],      // [{name, label}]
+  selRepeat: "",
+  mode: "batch",    // "batch" | "perrow"
+  fileRows: [],
+  fileHeaders: [],
+  colMap: {},       // fileCol -> formField
+  manualVals: {},   // formField -> manual value
+};
+
+// ── Helpers ──────────────────────────────────────────────────────
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+function newUUID(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});}
+function nk(s){return String(s||'').toLowerCase().replace(/[^a-z0-9 /]/g,' ').replace(/\s+/g,' ').trim();}
+function labelStr(l){return Array.isArray(l)?l[0]:(l||'');}
+function fmtDate(v){if(!v)return'';const d=new Date(v);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];return String(v);}
+function plural(n,w){return `${n} ${w}${n===1?'':'s'}`;}
+
+// ── Settings ─────────────────────────────────────────────────────
+function updateNavStatus(){
+  document.getElementById('serverLabel').textContent = CFG.server.replace('https://','');
+  const el = document.getElementById('tokenStatus');
+  if (CFG.token){el.textContent='Token ✓';el.className='badge bg';}
+  else{el.textContent='No token';el.className='badge ba';}
+}
+function openSettings(){
+  document.getElementById('cfgServer').value=CFG.server;
+  document.getElementById('cfgToken').value=CFG.token;
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+function closeSettings(){document.getElementById('settingsModal').classList.add('hidden');}
+function saveSettings(){
+  CFG.server=document.getElementById('cfgServer').value.trim().replace(/\/$/,'');
+  CFG.token=document.getElementById('cfgToken').value.trim();
+  try{localStorage.setItem('kobosync_cfg',JSON.stringify(CFG));}catch(e){}
+  closeSettings();
+  updateNavStatus();
+}
+updateNavStatus();
+
+// ── Step Navigation ──────────────────────────────────────────────
+function goStep(n){
+  if(n===3) buildMapUI();
+  if(n===4) buildPushSummary();
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('p'+i).classList.toggle('hidden',i!==n);
+    const el=document.getElementById('si'+i);
+    el.classList.remove('active','done');
+    if(i===n)el.classList.add('active');
+    if(i<n)el.classList.add('done');
+  });
+}
+
+// ── Step 1: Load Form ─────────────────────────────────────────────
+async function loadForm(){
+  const uid=document.getElementById('assetUid').value.trim();
+  if(!uid)return;
+  if(!CFG.token){
+    document.getElementById('noTokenWarn').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('noTokenWarn').classList.add('hidden');
+  const btn=document.getElementById('loadBtn');
+  btn.innerHTML='<span class="spin">⟳</span> Loading…';
+  btn.disabled=true;
+  const res=document.getElementById('loadResult');
+  res.innerHTML='';
+  try{
+    const r=await fetch(`${CFG.server}/api/v2/assets/${uid}/`,{
+      headers:{'Authorization':`Token ${CFG.token}`}
+    });
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+    const d=await r.json();
+    const survey=d.content?.survey||[];
+    const settings=d.content?.settings;
+    const idStr=(Array.isArray(settings)?settings[0]?.id_string:settings?.id_string)||uid;
+    S.form={uid,name:d.name,idString:idStr,survey,choices:d.content?.choices||[]};
+    S.tree=buildTree(survey);
+    S.fields=flatFields(survey);
+    S.repeats=survey.filter(f=>f.type==='begin_repeat').map(f=>({name:f.name,label:labelStr(f.label)||f.name}));
+    S.selRepeat=S.repeats[0]?.name||'';
+    const fieldCount=S.fields.length;
+    const repeatInfo=S.repeats.length?` · <span class="badge ba">${plural(S.repeats.length,'repeat group')}</span>`:'';
+    res.innerHTML=`<div class="alert alert-g">✅ <strong>${d.name}</strong> — ${plural(fieldCount,'field')}${repeatInfo}</div>
+      <div style="margin-top:8px">${S.fields.map(f=>`<span class="chip ${f.repeatGroup?'chip-a':'chip-g'}" title="${f.name}">${f.label||f.name}</span>`).join('')}</div>`;
+    document.getElementById('formNameBadge').textContent=d.name;
+    setTimeout(()=>goStep(2),700);
+  }catch(e){
+    res.innerHTML=`<div class="alert alert-r">❌ ${e.message}</div>`;
+  }
+  btn.textContent='Load Form';btn.disabled=false;
+}
+
+function buildTree(survey){
+  const root={t:'root',ch:[]};
+  const stk=[root];
+  for(const f of survey){
+    const par=stk[stk.length-1];
+    if(f.type==='begin_group'||f.type==='begin_repeat'){
+      const node={t:f.type==='begin_repeat'?'repeat':'group',name:f.name,ch:[]};
+      par.ch.push(node);stk.push(node);
+    }else if(f.type==='end_group'||f.type==='end_repeat'){
+      stk.pop();
+    }else if(!['note','calculate','hidden','trigger'].includes(f.type)){
+      par.ch.push({t:'field',name:f.name,ft:f.type});
+    }
+  }
+  return root;
+}
+
+function flatFields(survey){
+  const out=[];
+  let repeat=null;
+  const grpStk=[];
+  for(const f of survey){
+    if(f.type==='begin_repeat'){repeat=f.name;}
+    else if(f.type==='end_repeat'){repeat=null;}
+    else if(f.type==='begin_group'){grpStk.push(f.name);}
+    else if(f.type==='end_group'){grpStk.pop();}
+    else if(!['note','calculate','hidden','trigger'].includes(f.type)){
+      out.push({name:f.name,label:labelStr(f.label)||f.name,type:f.type,
+        group:grpStk[grpStk.length-1]||null,repeatGroup:repeat||null,
+        required:f.required===true||f.required==='true'});
+    }
+  }
+  return out;
+}
+
+// ── Step 2: Upload File ──────────────────────────────────────────
+function setMode(m){
+  S.mode=m;
+  document.getElementById('tabBatch').classList.toggle('on',m==='batch');
+  document.getElementById('tabPerRow').classList.toggle('on',m==='perrow');
+  document.getElementById('modeHint').innerHTML=m==='batch'
+    ?'<strong>Batch Mode:</strong> All rows = one submission (repeat group). Good for student rosters, participant lists per batch.'
+    :'<strong>Per-Row Mode:</strong> Each row in your file becomes an independent submission.';
+}
+setMode('batch');
+
+// File drag & drop
+const dz=document.getElementById('dropzone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)parseFile(f);});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])parseFile(e.target.files[0]);});
+
+function parseFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>setFileData(r.meta.fields||[],r.data,file.name)});
+  }else{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const wb=XLSX.read(e.target.result,{type:'binary',raw:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+      setFileData(rows.length?Object.keys(rows[0]):[],rows,file.name);
+    };
+    reader.readAsBinaryString(file);
+  }
+}
+
+function setFileData(headers,rows,name){
+  S.fileHeaders=headers;S.fileRows=rows;
+  S.colMap=autoMap(headers);
+  const mc=Object.keys(S.colMap).length;
+  document.getElementById('fileStats').innerHTML=
+    `<strong>${name}</strong><span class="sep">·</span>
+    <span class="badge bg">${plural(rows.length,'row')}</span>
+    <span class="badge ba">${plural(headers.length,'column')}</span>
+    <span class="badge bg">${mc} auto-mapped</span>`;
+  const ths=headers.map(h=>`<th>${h}</th>`).join('');
+  const trs=rows.slice(0,4).map(r=>`<tr>${headers.map(h=>`<td title="${r[h]||''}">${r[h]||'<span style="color:var(--bdr)">—</span>'}</td>`).join('')}</tr>`).join('');
+  document.getElementById('prevTable').innerHTML=`<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  document.getElementById('filePrev').classList.remove('hidden');
+  document.getElementById('s2next').classList.remove('hidden');
+}
+
+function autoMap(headers){
+  const m={};
+  for(const h of headers){
+    const hn=nk(h);
+    for(const f of S.fields){
+      if(nk(f.name)===hn||nk(f.label)===hn){m[h]=f.name;break;}
+      if(nk(f.name).length>3&&hn.includes(nk(f.name))){m[h]=f.name;break;}
+      if(nk(f.label).length>3&&hn.includes(nk(f.label))){m[h]=f.name;break;}
+    }
+  }
+  return m;
+}
+
+// ── Step 3: Map Columns ──────────────────────────────────────────
+function buildMapUI(){
+  const isBatch=S.mode==='batch'&&S.repeats.length>0;
+  document.getElementById('batchCfg').classList.toggle('hidden',!isBatch);
+
+  if(isBatch){
+    const rSel=document.getElementById('repeatSel');
+    rSel.innerHTML=S.repeats.map(r=>`<option value="${r.name}">${r.label} (${r.name})</option>`).join('');
+    rSel.value=S.selRepeat;
+    rSel.onchange=()=>{S.selRepeat=rSel.value;buildMapUI();};
+
+    const enrollFields=S.fields.filter(f=>!f.repeatGroup);
+    document.getElementById('enrollMap').innerHTML=enrollFields.length
+      ?enrollFields.map(f=>mapRow(f,true)).join('')
+      :'<div style="color:var(--dim);font-size:12px;margin-bottom:10px;">No enrollment-level fields found.</div>';
+
+    const repFields=S.fields.filter(f=>f.repeatGroup===S.selRepeat);
+    document.getElementById('mainMap').innerHTML=repFields.length
+      ?repFields.map(f=>mapRow(f,false)).join('')
+      :'<div style="color:var(--dim);font-size:12px;">No fields in this repeat group.</div>';
+  }else{
+    document.getElementById('mainMap').innerHTML=S.fields.map(f=>mapRow(f,false)).join('');
+  }
+}
+
+function mapRow(field,isEnroll){
+  const curCol=Object.entries(S.colMap).find(([,v])=>v===field.name)?.[0]||'';
+  const opts=['<option value="">— not mapped —</option>']
+    .concat(S.fileHeaders.map(h=>`<option value="${h}"${h===curCol?' selected':''}>${h}</option>`)).join('');
+  const manualVal=S.manualVals[field.name]||'';
+  const first=S.fileRows[0]||{};
+  const firstVal=curCol?first[curCol]:'';
+  const preview=firstVal?`<span style="color:var(--dim);font-size:10px;display:block;margin-top:3px;font-family:monospace;">Preview: ${firstVal}</span>`:'';
+  const manualInp=isEnroll?`<input class="map-manual" placeholder="Or type value manually…" value="${esc(manualVal)}"
+    onchange="S.manualVals['${field.name}']=this.value" />`:'';
+
+  return `<div class="map-row${isEnroll?' enroll-row':''}">
+    <div>
+      <div class="map-fld-lbl">${field.label}${field.required?' <span style="color:var(--red)">*</span>':''}</div>
+      <div class="map-fld-name">${field.name}</div>
+    </div>
+    <div class="map-arrow">→</div>
+    <div>
+      <select class="map-sel" onchange="setColMap('${field.name}',this.value)">${opts}</select>
+      ${preview}
+      ${manualInp}
+    </div>
+  </div>`;
+}
+
+function setColMap(fieldName,col){
+  for(const k of Object.keys(S.colMap))if(S.colMap[k]===fieldName)delete S.colMap[k];
+  if(col)S.colMap[col]=fieldName;
+}
+
+// ── Step 4: Push ─────────────────────────────────────────────────
+function getVal(row,fieldName){
+  const col=Object.entries(S.colMap).find(([,v])=>v===fieldName)?.[0];
+  if(col&&row&&row[col]!==undefined&&row[col]!=='')return row[col];
+  if(S.manualVals[fieldName])return S.manualVals[fieldName];
+  return '';
+}
+
+function resolveRow(row){
+  // Compute student-specific calculated fields
+  const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
+  const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
+  const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
+  const sid=(fn||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3)+mob.slice(-4);
+  const totalFee=(parseFloat(getVal(row,'fee_per_head')||0)*S.fileRows.length).toFixed(0);
+  const feePaid=getVal(row,'fee_paid')||totalFee;
+  const pending=(parseFloat(totalFee)-parseFloat(feePaid)).toFixed(0);
+  return {fn,mn,ln,fullName,sid,totalFee,feePaid,pending};
+}
+
+function nodeXML(node,data,repeatDataMap,depth=1){
+  const pad='  '.repeat(depth);
+  if(node.t==='root') return node.ch.map(c=>nodeXML(c,data,repeatDataMap,depth)).join('');
+  if(node.t==='group'){
+    const inner=node.ch.map(c=>nodeXML(c,data,repeatDataMap,depth+1)).join('');
+    return `${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+  }
+  if(node.t==='repeat'){
+    const rows=repeatDataMap[node.name]||[];
+    return rows.map(row=>{
+      const comp=resolveRow(row);
+      const fieldData=n=>{
+        if(n==='full_name')return comp.fullName;
+        if(n==='student_id')return comp.sid;
+        if(n==='total_fee')return comp.totalFee;
+        if(n==='pending_balance')return comp.pending;
+        const v=getVal(row,n);
+        // Date formatting
+        if(n.includes('date'))return fmtDate(v);
+        return v;
+      };
+      const inner=node.ch.map(c=>{
+        if(c.t==='field')return`  ${pad}<${c.name}>${esc(fieldData(c.name))}</${c.name}>\n`;
+        return nodeXML(c,row,{},depth+2);
+      }).join('');
+      return `${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+    }).join('');
+  }
+  if(node.t==='field'){
+    let v=getVal(data,node.name);
+    if(node.name==='total_fee'){const fph=parseFloat(getVal(data,'fee_per_head')||0);v=(fph*(S.mode==='batch'?S.fileRows.length:1)).toFixed(0);}
+    if(node.name.includes('date'))v=fmtDate(v);
+    if(node.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
+    return`${pad}<${node.name}>${esc(v)}</${node.name}>\n`;
+  }
+  return'';
+}
+
+function buildXML(enrollData,repeatDataMap){
+  const id=newUUID();
+  const fid=S.form.idString;
+  let xml=`<?xml version='1.0' ?>\n<${fid} id="${fid}">\n`;
+  xml+=`  <formhub><uuid>${id}</uuid></formhub>\n`;
+  xml+=nodeXML(S.tree,enrollData,repeatDataMap,1);
+  xml+=`  <meta>\n    <instanceID>uuid:${id}</instanceID>\n  </meta>\n`;
+  xml+=`</${fid}>`;
+  return xml;
+}
+
+function getSubmissions(){
+  if(S.mode==='batch'&&S.repeats.length>0){
+    // All rows → one submission, rows go into selected repeat group
+    const enrollData={}; // from first row
+    for(const f of S.fields.filter(f=>!f.repeatGroup)){
+      enrollData[f.name]=getVal(S.fileRows[0],f.name);
+    }
+    const repeatDataMap={};
+    repeatDataMap[S.selRepeat]=S.fileRows;
+    const xml=buildXML(enrollData,repeatDataMap);
+    return [{label:`All ${S.fileRows.length} rows → 1 submission`,xml}];
+  }else{
+    return S.fileRows.map((row,i)=>{
+      const xml=buildXML(row,{});
+      const name=getVal(row,'first_name')||getVal(row,'full_name')||`Row ${i+1}`;
+      return {label:name,xml};
+    });
+  }
+}
+
+function buildPushSummary(){
+  const subs=getSubmissions();
+  document.getElementById('pushSummary').innerHTML=`
+    <div class="g2" style="margin-bottom:14px;">
+      <div class="stat"><div class="stat-v" style="color:var(--green)">${subs.length}</div><div class="stat-l">Submission${subs.length===1?'':'s'}</div></div>
+      <div class="stat"><div class="stat-v" style="color:var(--amber)">${S.fileRows.length}</div><div class="stat-l">Total Rows</div></div>
+    </div>
+    <div class="alert alert-a" style="font-size:12px;">
+      ${S.mode==='batch'&&S.repeats.length>0
+        ?`<strong>Batch:</strong> All <strong>${S.fileRows.length} rows</strong> → 1 submission with repeat group <strong>${S.selRepeat}</strong>`
+        :`<strong>Per-Row:</strong> <strong>${S.fileRows.length} rows</strong> → ${S.fileRows.length} separate submissions`
+      }
+    </div>
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">
+      Submitting to: <code style="color:var(--txt)">${CFG.server}/api/v1/submissions</code>
+    </div>`;
+}
+
+async function startPush(){
+  const subs=getSubmissions();
+  document.getElementById('pushProg').classList.remove('hidden');
+  document.getElementById('pushRes').classList.remove('hidden');
+  document.getElementById('pushBtn').disabled=true;
+  document.getElementById('s4back').disabled=true;
+  document.getElementById('pushBtn').textContent='Pushing…';
+
+  const results=[];
+  const resList=document.getElementById('pushRes');
+  resList.innerHTML='<div id="resItems"></div>';
+
+  for(let i=0;i<subs.length;i++){
+    const sub=subs[i];
+    document.getElementById('progFill').style.width=`${Math.round((i/subs.length)*100)}%`;
+    document.getElementById('progTxt').textContent=`${i+1}/${subs.length} — ${sub.label}`;
+
+    let ok=false,status='',msg='';
+    try{
+      const fd=new FormData();
+      fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
+      const r=await fetch(`${CFG.server}/api/v1/submissions`,{
+        method:'POST',
+        headers:{'Authorization':`Token ${CFG.token}`},
+        body:fd
+      });
+      status=String(r.status);
+      msg=await r.text();
+      ok=r.status===201||r.status===202;
+    }catch(e){msg=e.message;}
+
+    results.push({label:sub.label,ok,status,msg});
+    const ri=document.getElementById('resItems');
+    ri.innerHTML+=`<div class="res-item">
+      <div class="res-icon">${ok?'✅':'❌'}</div>
+      <div style="flex:1;min-width:0;">
+        <div>${sub.label}</div>
+        <div class="res-sub">${ok?`HTTP ${status} OK`:`HTTP ${status||'error'} — ${msg.slice(0,80)}`}</div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('progFill').style.width='100%';
+  const passed=results.filter(r=>r.ok).length;
+  const failed=results.length-passed;
+  document.getElementById('progTxt').innerHTML=
+    `Done — <span style="color:var(--green)">${passed} pushed</span>${failed?` · <span style="color:var(--red)">${failed} failed</span>`:''}`;
+  document.getElementById('pushBtn').textContent='Push to KoboToolbox →';
+  document.getElementById('pushBtn').disabled=false;
+  document.getElementById('s4back').disabled=false;
+}
+
+function downloadXMLs(){
+  const subs=getSubmissions();
+  if(subs.length===1){
+    dl(subs[0].xml,'submission.xml');
+  }else{
+    subs.forEach((s,i)=>{
+      const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+      setTimeout(()=>dl(s.xml,`submission_${i+1}_${safe}.xml`),i*200);
+    });
+  }
+}
+
+function dl(content,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:'text/xml'}));
+  a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+// Close modal on overlay click
+document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+</script>
+</body>
+</html>
