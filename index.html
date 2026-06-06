@@ -6,19 +6,16 @@
 <title>KoboSync — Bulk Uploader</title>
 <style>
 :root {
-  --bg: #0d1117; --surf: #161b22; --surf2: #1c2128;
-  --bdr: #30363d; --bdr2: #21262d;
-  --txt: #e6edf3; --muted: #8b949e; --dim: #6e7681;
-  --green: #10b981; --green-bg: #0a2015; --green-bdr: #10b98133;
-  --amber: #f59e0b; --amber-bg: #1a1000; --amber-bdr: #f59e0b33;
-  --red: #ef4444; --red-bg: #1a0a0a; --red-bdr: #ef444433;
-  --blue: #3b82f6;
+  --bg:#0d1117;--surf:#161b22;--surf2:#1c2128;
+  --bdr:#30363d;--bdr2:#21262d;
+  --txt:#e6edf3;--muted:#8b949e;--dim:#6e7681;
+  --green:#10b981;--gbg:#0a2015;--gbdr:#10b98133;
+  --amber:#f59e0b;--abg:#1a1000;--abdr:#f59e0b33;
+  --red:#ef4444;--rbg:#1a0a0a;--rbdr:#ef444433;
+  --blue:#3b82f6;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px;}
-a{color:var(--green);text-decoration:none;}
-
-/* NAV */
 .nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;}
 .nav-brand{display:flex;align-items:center;gap:10px;}
 .nav-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--green),#059669);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
@@ -26,13 +23,9 @@ a{color:var(--green);text-decoration:none;}
 .nav-sub{color:var(--dim);font-size:11px;margin-top:1px;}
 .btn-icon{background:transparent;border:1px solid var(--bdr);color:var(--muted);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:15px;line-height:1;}
 .btn-icon:hover{border-color:var(--muted);color:var(--txt);}
-
-/* MAIN */
 .main{max-width:860px;margin:0 auto;padding:24px 20px;}
-
-/* STEPS */
 .steps{display:flex;align-items:center;margin-bottom:24px;}
-.step{display:flex;align-items:center;gap:7px;font-size:12px;cursor:default;}
+.step{display:flex;align-items:center;gap:7px;font-size:12px;}
 .step-num{width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);color:var(--dim);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
 .step-lbl{color:var(--dim);white-space:nowrap;transition:color .2s;}
 .step.active .step-num{border-color:var(--green);color:var(--green);}
@@ -40,57 +33,34 @@ a{color:var(--green);text-decoration:none;}
 .step.done .step-num{background:var(--green);border-color:var(--green);color:#fff;}
 .step.done .step-lbl{color:var(--green);}
 .step-line{flex:1;height:1px;background:var(--bdr);margin:0 8px;}
-
-/* CARD */
 .card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:14px;}
 .card-head{font-weight:600;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-
-/* FORM CONTROLS */
 .lbl{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:5px;}
 .inp,.sel{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:6px;color:var(--txt);padding:9px 12px;font-size:13px;font-family:inherit;transition:border-color .15s;}
 .inp:focus,.sel:focus{outline:none;border-color:var(--green);}
-.sel{cursor:pointer;appearance:auto;}
-.sel option{background:var(--surf);}
-.inp-row{display:flex;gap:8px;}
-.inp-row .inp{flex:1;}
+.sel{cursor:pointer;}.sel option{background:var(--surf);}
+.inp-row{display:flex;gap:8px;}.inp-row .inp{flex:1;}
 .fg{margin-bottom:14px;}
 .helper{font-size:11px;color:var(--dim);margin-top:4px;}
-
-/* BUTTONS */
 .btn{padding:9px 16px;border-radius:7px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
-.btn-green{background:var(--green);color:#fff;}
-.btn-green:hover{background:#059669;}
-.btn-green:disabled{background:var(--green-bg);color:#3a5a40;cursor:not-allowed;}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:#059669;}
+.btn-green:disabled{background:var(--gbg);color:#3a5a40;cursor:not-allowed;}
 .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--bdr);}
 .btn-outline:hover{border-color:var(--muted);color:var(--txt);}
-.btn-amber{background:var(--amber);color:#000;}
-.btn-amber:hover{background:#d97706;}
-
-/* BADGE */
 .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
-.bg{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
-.ba{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
-.br{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
-.bb{background:#0c1a30;border:1px solid #3b82f633;color:var(--blue);}
-
-/* ALERTS */
-.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;line-height:1.5;}
-.alert-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
-.alert-a{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
-.alert-r{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
-.alert p{margin:4px 0 0;}
-
-/* DROPZONE */
+.bg{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green);}
+.ba{background:var(--abg);border:1px solid var(--abdr);color:var(--amber);}
+.br{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red);}
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;line-height:1.6;}
+.alert-g{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green);}
+.alert-a{background:var(--abg);border:1px solid var(--abdr);color:var(--amber);}
+.alert-r{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red);}
 .dropzone{border:2px dashed var(--bdr);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .15s;}
-.dropzone:hover,.dropzone.over{border-color:var(--green);background:var(--green-bg);}
-.dz-icon{font-size:30px;margin-bottom:8px;}
-.dz-txt{font-size:13px;color:var(--muted);}
-.dz-txt strong{color:var(--txt);}
+.dropzone:hover,.dropzone.over{border-color:var(--green);background:var(--gbg);}
+.dz-icon{font-size:30px;margin-bottom:8px;}.dz-txt{font-size:13px;color:var(--muted);}.dz-txt strong{color:var(--txt);}
 .dz-sub{font-size:11px;color:var(--dim);margin-top:4px;}
-
-/* FIELD MAPPING */
 .map-row{display:grid;grid-template-columns:1fr 28px 1.4fr;align-items:start;gap:8px;padding:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:7px;margin-bottom:6px;}
-.map-row.enroll-row{background:#0a1208;border-color:var(--green-bdr);}
+.map-row.enroll-row{background:#0a1208;border-color:var(--gbdr);}
 .map-fld-name{font-size:12px;color:var(--dim);font-family:monospace;margin-top:2px;}
 .map-fld-lbl{font-size:13px;font-weight:500;}
 .map-arrow{text-align:center;color:var(--bdr);font-size:18px;padding-top:6px;}
@@ -98,58 +68,41 @@ a{color:var(--green);text-decoration:none;}
 .map-sel:focus{outline:none;border-color:var(--green);}
 .map-manual{width:100%;background:var(--surf2);border:1px solid var(--bdr2);border-radius:5px;color:var(--txt);padding:5px 8px;font-size:11px;font-family:inherit;margin-top:5px;}
 .map-manual:focus{outline:none;border-color:var(--green);}
-
-/* TABLE */
 .tbl-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:8px;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 th{padding:8px 12px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--bdr);background:var(--bg);white-space:nowrap;}
 td{padding:7px 12px;border-bottom:1px solid var(--bdr2);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--surf2);}
-
-/* STATS */
-.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surf2);}
 .stat{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;flex:1;min-width:70px;text-align:center;}
 .stat-v{font-size:22px;font-weight:700;line-height:1;}
 .stat-l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
-
-/* PROGRESS */
-.prog-wrap{margin:10px 0;}
-.prog-bar{height:6px;background:var(--bdr);border-radius:3px;overflow:hidden;}
+.prog-bar{height:6px;background:var(--bdr);border-radius:3px;overflow:hidden;margin:10px 0 5px;}
 .prog-fill{height:100%;background:var(--green);transition:width .3s;border-radius:3px;}
-.prog-txt{font-size:12px;color:var(--muted);margin-top:5px;}
-
-/* RESULTS */
-.res-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr2);font-size:12px;}
+.prog-txt{font-size:12px;color:var(--muted);}
+.res-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr2);font-size:12px;}
 .res-item:last-child{border-bottom:none;}
-.res-icon{width:20px;text-align:center;flex-shrink:0;}
-.res-sub{color:var(--dim);font-size:11px;font-family:monospace;}
-
-/* MODAL */
+.res-icon{width:20px;text-align:center;flex-shrink:0;margin-top:1px;}
+.res-sub{color:var(--dim);font-size:11px;font-family:monospace;word-break:break-all;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
-.modal{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:22px;width:100%;max-width:460px;}
-.modal-title{font-weight:700;font-size:15px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-
-/* TABS */
+.modal{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:22px;width:100%;max-width:480px;}
+.modal-title{font-weight:700;font-size:15px;margin-bottom:16px;}
 .tabs{display:flex;gap:4px;margin-bottom:12px;}
 .tab{padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid transparent;font-weight:500;}
-.tab.on{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green);}
+.tab.on{background:var(--gbg);border-color:var(--gbdr);color:var(--green);}
 .tab:not(.on){color:var(--muted);}
 .tab:not(.on):hover{border-color:var(--bdr);color:var(--txt);}
-
-/* UTIL */
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .action-bar{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--bdr);}
 .hidden{display:none!important;}
 .sep{color:var(--dim);margin:0 6px;}
 .chip{display:inline-block;padding:3px 8px;border-radius:5px;font-size:11px;font-family:monospace;margin:2px;}
-.chip-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
-.chip-a{background:var(--amber-bg);border:1px solid var(--amber-bdr);color:var(--amber);}
+.chip-g{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green);}
+.chip-a{background:var(--abg);border:1px solid var(--abdr);color:var(--amber);}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:560px){.g2{grid-template-columns:1fr;}.steps .step-lbl{display:none;}}
+@media(max-width:560px){.g2{grid-template-columns:1fr;}.step-lbl{display:none;}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin .8s linear infinite;display:inline-block;}
-pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;background:var(--bg);padding:10px;border-radius:6px;margin-top:8px;white-space:pre-wrap;word-break:break-all;}
+code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
 </style>
 </head>
 <body>
@@ -160,12 +113,18 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     <div class="modal-title">⚙️ Settings</div>
     <div class="fg">
       <label class="lbl">KoboToolbox Server URL</label>
-      <input class="inp" id="cfgServer" value="https://kobo.eu.kobotoolbox.org" />
+      <input class="inp" id="cfgServer" />
+      <div class="helper">e.g. <code>https://eu.kobotoolbox.org</code> or <code>https://kf.kobotoolbox.org</code></div>
     </div>
     <div class="fg">
       <label class="lbl">API Token</label>
-      <input class="inp" id="cfgToken" type="password" placeholder="Paste your API token..." />
+      <input class="inp" id="cfgToken" type="password" placeholder="Paste your API token…" />
       <div class="helper">Get it at: <strong>[your server]/token/</strong></div>
+    </div>
+    <div style="margin-top:4px;padding:10px 12px;background:var(--abg);border:1px solid var(--abdr);border-radius:6px;font-size:12px;color:var(--amber);">
+      💡 <strong>CORS tip:</strong> If you see "Failed to fetch", don't open this file directly. Run a local server instead:<br>
+      <code style="display:block;margin-top:5px;color:var(--txt);">python3 -m http.server 8080</code>
+      Then open <code>http://localhost:8080/kobosync.html</code>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
@@ -180,7 +139,7 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     <div class="nav-logo">📤</div>
     <div>
       <div class="nav-title">KoboSync</div>
-      <div class="nav-sub" id="serverLabel">kobo.eu.kobotoolbox.org</div>
+      <div class="nav-sub" id="serverLabel">—</div>
     </div>
   </div>
   <div class="row" style="gap:8px;">
@@ -189,11 +148,10 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
   </div>
 </nav>
 
-<!-- Main -->
 <div class="main">
 
-  <!-- Step Indicator -->
-  <div class="steps" id="stepsEl">
+  <!-- Steps -->
+  <div class="steps">
     <div class="step active" id="si1"><div class="step-num">1</div><div class="step-lbl">Load Form</div></div>
     <div class="step-line"></div>
     <div class="step" id="si2"><div class="step-num">2</div><div class="step-lbl">Upload File</div></div>
@@ -203,55 +161,55 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     <div class="step" id="si4"><div class="step-num">4</div><div class="step-lbl">Push</div></div>
   </div>
 
-  <!-- ── Step 1: Load Form ────────────────────────────────── -->
+  <!-- Step 1 -->
   <div id="p1">
     <div class="card">
       <div class="card-head">📋 Load KoboToolbox Form</div>
-      <div id="noTokenWarn" class="alert alert-a hidden">⚠️ No API token set — click ⚙️ in the top right to add yours.</div>
+      <div id="noTokenWarn" class="alert alert-a hidden">⚠️ No API token — click ⚙️ top right to add yours.</div>
       <div class="fg">
-        <label class="lbl">Form / Asset UID</label>
+        <label class="lbl">Form URL or Asset UID</label>
         <div class="inp-row">
-          <input class="inp" id="assetUid" placeholder="e.g. aXXXXXXXXXXXXXXXXXXXXXX" />
+          <input class="inp" id="assetUid" placeholder="Paste full URL or just the UID  e.g. aXXXXXXXXXXXXXXXXXXXXXX" />
           <button class="btn btn-green" id="loadBtn" onclick="loadForm()">Load Form</button>
         </div>
-        <div class="helper">Find it in the URL when viewing your form: /forms/<strong>[UID]</strong>/summary</div>
+        <div class="helper">You can paste the full browser URL — the UID will be extracted automatically.</div>
       </div>
       <div id="loadResult"></div>
     </div>
+
+    <!-- CORS warning panel -->
+    <div class="card" style="border-color:var(--abdr);background:var(--abg);">
+      <div class="card-head" style="color:var(--amber);margin-bottom:8px;">⚠️ Getting "Failed to fetch"?</div>
+      <div style="font-size:13px;color:var(--amber);line-height:1.7;">
+        Browsers block API calls from files opened via <code>file://</code>. Fix it by serving the file locally:<br><br>
+        <strong>Option 1 — Python (easiest):</strong><br>
+        <code style="display:block;margin:4px 0 10px;background:var(--bg);padding:7px 10px;border-radius:6px;color:var(--txt);">python3 -m http.server 8080</code>
+        Then open → <code style="color:var(--txt);">http://localhost:8080/kobosync.html</code><br><br>
+        <strong>Option 2 — Node:</strong><br>
+        <code style="display:block;margin:4px 0;background:var(--bg);padding:7px 10px;border-radius:6px;color:var(--txt);">npx serve .</code>
+      </div>
+    </div>
   </div>
 
-  <!-- ── Step 2: Upload File ─────────────────────────────── -->
+  <!-- Step 2 -->
   <div id="p2" class="hidden">
     <div class="card">
-      <div class="card-head">
-        📁 Upload Data File
-        <span class="badge bg" id="formNameBadge">—</span>
-      </div>
-
-      <!-- Mode tabs -->
+      <div class="card-head">📁 Upload Data File <span class="badge bg" id="formNameBadge">—</span></div>
       <div class="tabs">
-        <div class="tab on" id="tabBatch" onclick="setMode('batch')">
-          Batch Mode &nbsp;<span class="badge bg">all rows = 1 submission</span>
-        </div>
-        <div class="tab" id="tabPerRow" onclick="setMode('perrow')">
-          Per-Row Mode &nbsp;<span class="badge ba">each row = 1 submission</span>
-        </div>
+        <div class="tab on" id="tabBatch" onclick="setMode('batch')">Batch &nbsp;<span class="badge bg">all rows = 1 submission</span></div>
+        <div class="tab" id="tabPerRow" onclick="setMode('perrow')">Per-Row &nbsp;<span class="badge ba">each row = 1 submission</span></div>
       </div>
       <div class="alert alert-a" id="modeHint" style="font-size:12px;"></div>
-
-      <!-- Dropzone -->
       <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
         <div class="dz-icon">📂</div>
         <div class="dz-txt"><strong>Click to browse</strong> or drag & drop</div>
         <div class="dz-sub">CSV · Excel (.xlsx / .xls)</div>
       </div>
       <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="hidden" />
-
       <div id="filePrev" class="hidden" style="margin-top:14px;">
         <div id="fileStats" style="margin-bottom:10px;font-size:13px;"></div>
         <div class="tbl-wrap" id="prevTable"></div>
       </div>
-
       <div class="action-bar">
         <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
         <button class="btn btn-green hidden" id="s2next" onclick="goStep(3)">Map Columns →</button>
@@ -259,27 +217,22 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     </div>
   </div>
 
-  <!-- ── Step 3: Map Columns ─────────────────────────────── -->
+  <!-- Step 3 -->
   <div id="p3" class="hidden">
     <div class="card">
       <div class="card-head">🔀 Map Columns to Form Fields</div>
-
-      <!-- Batch config (only in batch mode with repeats) -->
       <div id="batchCfg" class="hidden">
         <div class="fg">
-          <label class="lbl">Rows represent entries in repeat group:</label>
+          <label class="lbl">Rows belong to repeat group:</label>
           <select class="sel" id="repeatSel"></select>
         </div>
         <div class="card-head" style="font-size:13px;margin-top:4px;">
-          📋 Enrollment-Level Fields
-          <span class="badge ba">taken from row 1 or enter manually</span>
+          📋 Enrollment-Level Fields <span class="badge ba">from row 1 or manual</span>
         </div>
         <div id="enrollMap"></div>
         <div class="card-head" style="font-size:13px;margin-top:14px;">👤 Repeat / Student Fields</div>
       </div>
-
       <div id="mainMap"></div>
-
       <div class="action-bar">
         <button class="btn btn-outline" onclick="goStep(2)">← Back</button>
         <button class="btn btn-green" onclick="goStep(4)">Preview & Push →</button>
@@ -287,22 +240,16 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     </div>
   </div>
 
-  <!-- ── Step 4: Push ────────────────────────────────────── -->
+  <!-- Step 4 -->
   <div id="p4" class="hidden">
     <div class="card">
       <div class="card-head">🚀 Review & Push</div>
-
       <div id="pushSummary"></div>
-
       <div id="pushProg" class="hidden">
-        <div class="prog-wrap">
-          <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-          <div class="prog-txt" id="progTxt">Preparing…</div>
-        </div>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        <div class="prog-txt" id="progTxt">Preparing…</div>
       </div>
-
       <div id="pushRes" class="hidden"></div>
-
       <div class="action-bar">
         <button class="btn btn-outline" id="s4back" onclick="goStep(3)">← Back</button>
         <div class="row">
@@ -313,53 +260,53 @@ pre.result-body{font-size:10px;color:var(--dim);overflow:auto;max-height:120px;b
     </div>
   </div>
 
-</div><!-- /main -->
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  ↓↓↓  HARDCODE YOUR TOKEN HERE  ↓↓↓
+//  CONFIGURE: hardcode token + server so you never have to re-enter
 // ═══════════════════════════════════════════════════════════════
-const FIXED_TOKEN = "be8d9189ac085ed0345b12ee0ae622d4e93b3ba0";
-const DEFAULT_SERVER = "https://kobo.eu.kobotoolbox.org";
+const FIXED_TOKEN  = "";                           // ← paste token here
+const FIXED_SERVER = "https://eu.kobotoolbox.org"; // ← your server
 // ═══════════════════════════════════════════════════════════════
 
-// ── Config ──────────────────────────────────────────────────────
-let CFG = { server: DEFAULT_SERVER, token: FIXED_TOKEN };
+let CFG = { server: FIXED_SERVER || "https://eu.kobotoolbox.org", token: FIXED_TOKEN || "" };
 try {
   const s = localStorage.getItem("kobosync_cfg");
-  if (s) { const c = JSON.parse(s); CFG.server = c.server||CFG.server; CFG.token = c.token||CFG.token; }
+  if (s) { const c = JSON.parse(s); if(!FIXED_SERVER) CFG.server=c.server||CFG.server; if(!FIXED_TOKEN) CFG.token=c.token||CFG.token; }
 } catch(e){}
-if (FIXED_TOKEN) CFG.token = FIXED_TOKEN;
 
-// ── App State ────────────────────────────────────────────────────
 const S = {
-  form: null,       // { uid, name, idString, survey, choices }
-  tree: null,       // parsed tree
-  fields: [],       // flat field list [{name, label, type, group, repeatGroup, required}]
-  repeats: [],      // [{name, label}]
-  selRepeat: "",
-  mode: "batch",    // "batch" | "perrow"
-  fileRows: [],
-  fileHeaders: [],
-  colMap: {},       // fileCol -> formField
-  manualVals: {},   // formField -> manual value
+  form: null, tree: null, fields: [], repeats: [], selRepeat: "",
+  mode: "batch", fileRows: [], fileHeaders: [], colMap: {}, manualVals: {}
 };
 
 // ── Helpers ──────────────────────────────────────────────────────
 function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
-function newUUID(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});}
+function uuid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});}
 function nk(s){return String(s||'').toLowerCase().replace(/[^a-z0-9 /]/g,' ').replace(/\s+/g,' ').trim();}
-function labelStr(l){return Array.isArray(l)?l[0]:(l||'');}
+function lstr(l){return Array.isArray(l)?l[0]:(l||'');}
 function fmtDate(v){if(!v)return'';const d=new Date(v);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];return String(v);}
-function plural(n,w){return `${n} ${w}${n===1?'':'s'}`;}
+function plural(n,w){return`${n} ${w}${n===1?'':'s'}`;}
 
-// ── Settings ─────────────────────────────────────────────────────
-function updateNavStatus(){
+// Extract UID from full URL if user pastes one
+function parseUID(input) {
+  input = input.trim();
+  // Match patterns like /forms/aXXXXX/ or /#/forms/aXXXXX
+  const m = input.match(/\/forms\/([a-zA-Z0-9]{20,})/);
+  if (m) return m[1];
+  // Already a raw UID
+  if (/^[a-zA-Z0-9]{15,}$/.test(input)) return input;
+  return input;
+}
+
+// ── Settings ────────────────────────────────────────────────────
+function updateNav(){
   document.getElementById('serverLabel').textContent = CFG.server.replace('https://','');
-  const el = document.getElementById('tokenStatus');
-  if (CFG.token){el.textContent='Token ✓';el.className='badge bg';}
+  const el=document.getElementById('tokenStatus');
+  if(CFG.token){el.textContent='Token ✓';el.className='badge bg';}
   else{el.textContent='No token';el.className='badge ba';}
 }
 function openSettings(){
@@ -372,15 +319,14 @@ function saveSettings(){
   CFG.server=document.getElementById('cfgServer').value.trim().replace(/\/$/,'');
   CFG.token=document.getElementById('cfgToken').value.trim();
   try{localStorage.setItem('kobosync_cfg',JSON.stringify(CFG));}catch(e){}
-  closeSettings();
-  updateNavStatus();
+  closeSettings(); updateNav();
 }
-updateNavStatus();
+updateNav();
 
-// ── Step Navigation ──────────────────────────────────────────────
+// ── Steps ───────────────────────────────────────────────────────
 function goStep(n){
-  if(n===3) buildMapUI();
-  if(n===4) buildPushSummary();
+  if(n===3)buildMapUI();
+  if(n===4)buildPushSummary();
   [1,2,3,4].forEach(i=>{
     document.getElementById('p'+i).classList.toggle('hidden',i!==n);
     const el=document.getElementById('si'+i);
@@ -390,57 +336,55 @@ function goStep(n){
   });
 }
 
-// ── Step 1: Load Form ─────────────────────────────────────────────
+// ── Step 1: Load Form ───────────────────────────────────────────
 async function loadForm(){
-  const uid=document.getElementById('assetUid').value.trim();
+  const raw=document.getElementById('assetUid').value.trim();
+  const uid=parseUID(raw);
   if(!uid)return;
-  if(!CFG.token){
-    document.getElementById('noTokenWarn').classList.remove('hidden');
-    return;
-  }
+  if(!CFG.token){document.getElementById('noTokenWarn').classList.remove('hidden');return;}
   document.getElementById('noTokenWarn').classList.add('hidden');
   const btn=document.getElementById('loadBtn');
-  btn.innerHTML='<span class="spin">⟳</span> Loading…';
-  btn.disabled=true;
-  const res=document.getElementById('loadResult');
-  res.innerHTML='';
+  btn.innerHTML='<span class="spin">⟳</span> Loading…';btn.disabled=true;
+  const res=document.getElementById('loadResult');res.innerHTML='';
   try{
     const r=await fetch(`${CFG.server}/api/v2/assets/${uid}/`,{
       headers:{'Authorization':`Token ${CFG.token}`}
     });
-    if(!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+    if(!r.ok)throw new Error(`HTTP ${r.status} — ${await r.text()}`);
     const d=await r.json();
     const survey=d.content?.survey||[];
     const settings=d.content?.settings;
     const idStr=(Array.isArray(settings)?settings[0]?.id_string:settings?.id_string)||uid;
     S.form={uid,name:d.name,idString:idStr,survey,choices:d.content?.choices||[]};
-    S.tree=buildTree(survey);
-    S.fields=flatFields(survey);
-    S.repeats=survey.filter(f=>f.type==='begin_repeat').map(f=>({name:f.name,label:labelStr(f.label)||f.name}));
+    S.tree=buildTree(survey);S.fields=flatFields(survey);
+    S.repeats=survey.filter(f=>f.type==='begin_repeat').map(f=>({name:f.name,label:lstr(f.label)||f.name}));
     S.selRepeat=S.repeats[0]?.name||'';
-    const fieldCount=S.fields.length;
-    const repeatInfo=S.repeats.length?` · <span class="badge ba">${plural(S.repeats.length,'repeat group')}</span>`:'';
-    res.innerHTML=`<div class="alert alert-g">✅ <strong>${d.name}</strong> — ${plural(fieldCount,'field')}${repeatInfo}</div>
+    const ri=S.repeats.length?` · <span class="badge ba">${plural(S.repeats.length,'repeat group')}</span>`:'';
+    res.innerHTML=`<div class="alert alert-g">✅ <strong>${d.name}</strong> — ${plural(S.fields.length,'field')}${ri}</div>
       <div style="margin-top:8px">${S.fields.map(f=>`<span class="chip ${f.repeatGroup?'chip-a':'chip-g'}" title="${f.name}">${f.label||f.name}</span>`).join('')}</div>`;
     document.getElementById('formNameBadge').textContent=d.name;
     setTimeout(()=>goStep(2),700);
   }catch(e){
-    res.innerHTML=`<div class="alert alert-r">❌ ${e.message}</div>`;
+    const isCORS=e.message==='Failed to fetch'||e.message.includes('NetworkError');
+    res.innerHTML=`<div class="alert alert-r">
+      ❌ ${e.message}
+      ${isCORS?`<br><br><strong>This looks like a CORS error.</strong> Open this file via a local server:<br>
+      <code style="display:block;margin-top:6px;background:var(--bg);padding:6px 10px;border-radius:5px;color:var(--txt);">python3 -m http.server 8080</code>
+      Then visit <code>http://localhost:8080/kobosync.html</code>`:''}
+    </div>`;
   }
   btn.textContent='Load Form';btn.disabled=false;
 }
 
 function buildTree(survey){
-  const root={t:'root',ch:[]};
-  const stk=[root];
+  const root={t:'root',ch:[]};const stk=[root];
   for(const f of survey){
     const par=stk[stk.length-1];
     if(f.type==='begin_group'||f.type==='begin_repeat'){
       const node={t:f.type==='begin_repeat'?'repeat':'group',name:f.name,ch:[]};
       par.ch.push(node);stk.push(node);
-    }else if(f.type==='end_group'||f.type==='end_repeat'){
-      stk.pop();
-    }else if(!['note','calculate','hidden','trigger'].includes(f.type)){
+    }else if(f.type==='end_group'||f.type==='end_repeat'){stk.pop();}
+    else if(!['note','calculate','hidden','trigger'].includes(f.type)){
       par.ch.push({t:'field',name:f.name,ft:f.type});
     }
   }
@@ -448,16 +392,14 @@ function buildTree(survey){
 }
 
 function flatFields(survey){
-  const out=[];
-  let repeat=null;
-  const grpStk=[];
+  const out=[];let repeat=null;const grpStk=[];
   for(const f of survey){
-    if(f.type==='begin_repeat'){repeat=f.name;}
-    else if(f.type==='end_repeat'){repeat=null;}
-    else if(f.type==='begin_group'){grpStk.push(f.name);}
-    else if(f.type==='end_group'){grpStk.pop();}
+    if(f.type==='begin_repeat')repeat=f.name;
+    else if(f.type==='end_repeat')repeat=null;
+    else if(f.type==='begin_group')grpStk.push(f.name);
+    else if(f.type==='end_group')grpStk.pop();
     else if(!['note','calculate','hidden','trigger'].includes(f.type)){
-      out.push({name:f.name,label:labelStr(f.label)||f.name,type:f.type,
+      out.push({name:f.name,label:lstr(f.label)||f.name,type:f.type,
         group:grpStk[grpStk.length-1]||null,repeatGroup:repeat||null,
         required:f.required===true||f.required==='true'});
     }
@@ -465,18 +407,17 @@ function flatFields(survey){
   return out;
 }
 
-// ── Step 2: Upload File ──────────────────────────────────────────
+// ── Step 2: Upload ──────────────────────────────────────────────
 function setMode(m){
   S.mode=m;
   document.getElementById('tabBatch').classList.toggle('on',m==='batch');
   document.getElementById('tabPerRow').classList.toggle('on',m==='perrow');
   document.getElementById('modeHint').innerHTML=m==='batch'
-    ?'<strong>Batch Mode:</strong> All rows = one submission (repeat group). Good for student rosters, participant lists per batch.'
-    :'<strong>Per-Row Mode:</strong> Each row in your file becomes an independent submission.';
+    ?'<strong>Batch Mode:</strong> All rows = one submission with a repeat group. Best for student rosters / participant lists.'
+    :'<strong>Per-Row Mode:</strong> Each row = a separate independent submission.';
 }
 setMode('batch');
 
-// File drag & drop
 const dz=document.getElementById('dropzone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
@@ -500,8 +441,7 @@ function parseFile(file){
 }
 
 function setFileData(headers,rows,name){
-  S.fileHeaders=headers;S.fileRows=rows;
-  S.colMap=autoMap(headers);
+  S.fileHeaders=headers;S.fileRows=rows;S.colMap=autoMap(headers);
   const mc=Object.keys(S.colMap).length;
   document.getElementById('fileStats').innerHTML=
     `<strong>${name}</strong><span class="sep">·</span>
@@ -528,25 +468,20 @@ function autoMap(headers){
   return m;
 }
 
-// ── Step 3: Map Columns ──────────────────────────────────────────
+// ── Step 3: Mapping ─────────────────────────────────────────────
 function buildMapUI(){
   const isBatch=S.mode==='batch'&&S.repeats.length>0;
   document.getElementById('batchCfg').classList.toggle('hidden',!isBatch);
-
   if(isBatch){
     const rSel=document.getElementById('repeatSel');
     rSel.innerHTML=S.repeats.map(r=>`<option value="${r.name}">${r.label} (${r.name})</option>`).join('');
     rSel.value=S.selRepeat;
     rSel.onchange=()=>{S.selRepeat=rSel.value;buildMapUI();};
-
-    const enrollFields=S.fields.filter(f=>!f.repeatGroup);
-    document.getElementById('enrollMap').innerHTML=enrollFields.length
-      ?enrollFields.map(f=>mapRow(f,true)).join('')
-      :'<div style="color:var(--dim);font-size:12px;margin-bottom:10px;">No enrollment-level fields found.</div>';
-
-    const repFields=S.fields.filter(f=>f.repeatGroup===S.selRepeat);
-    document.getElementById('mainMap').innerHTML=repFields.length
-      ?repFields.map(f=>mapRow(f,false)).join('')
+    const ef=S.fields.filter(f=>!f.repeatGroup);
+    document.getElementById('enrollMap').innerHTML=ef.length?ef.map(f=>mapRow(f,true)).join('')
+      :'<div style="color:var(--dim);font-size:12px;margin-bottom:10px;">No enrollment-level fields.</div>';
+    const rf=S.fields.filter(f=>f.repeatGroup===S.selRepeat);
+    document.getElementById('mainMap').innerHTML=rf.length?rf.map(f=>mapRow(f,false)).join('')
       :'<div style="color:var(--dim);font-size:12px;">No fields in this repeat group.</div>';
   }else{
     document.getElementById('mainMap').innerHTML=S.fields.map(f=>mapRow(f,false)).join('');
@@ -557,14 +492,11 @@ function mapRow(field,isEnroll){
   const curCol=Object.entries(S.colMap).find(([,v])=>v===field.name)?.[0]||'';
   const opts=['<option value="">— not mapped —</option>']
     .concat(S.fileHeaders.map(h=>`<option value="${h}"${h===curCol?' selected':''}>${h}</option>`)).join('');
-  const manualVal=S.manualVals[field.name]||'';
   const first=S.fileRows[0]||{};
   const firstVal=curCol?first[curCol]:'';
   const preview=firstVal?`<span style="color:var(--dim);font-size:10px;display:block;margin-top:3px;font-family:monospace;">Preview: ${firstVal}</span>`:'';
-  const manualInp=isEnroll?`<input class="map-manual" placeholder="Or type value manually…" value="${esc(manualVal)}"
-    onchange="S.manualVals['${field.name}']=this.value" />`:'';
-
-  return `<div class="map-row${isEnroll?' enroll-row':''}">
+  const manualInp=isEnroll?`<input class="map-manual" placeholder="Or type manually…" value="${esc(S.manualVals[field.name]||'')}" onchange="S.manualVals['${field.name}']=this.value" />`:'';
+  return`<div class="map-row${isEnroll?' enroll-row':''}">
     <div>
       <div class="map-fld-lbl">${field.label}${field.required?' <span style="color:var(--red)">*</span>':''}</div>
       <div class="map-fld-name">${field.name}</div>
@@ -572,8 +504,7 @@ function mapRow(field,isEnroll){
     <div class="map-arrow">→</div>
     <div>
       <select class="map-sel" onchange="setColMap('${field.name}',this.value)">${opts}</select>
-      ${preview}
-      ${manualInp}
+      ${preview}${manualInp}
     </div>
   </div>`;
 }
@@ -583,91 +514,69 @@ function setColMap(fieldName,col){
   if(col)S.colMap[col]=fieldName;
 }
 
-// ── Step 4: Push ─────────────────────────────────────────────────
-function getVal(row,fieldName){
-  const col=Object.entries(S.colMap).find(([,v])=>v===fieldName)?.[0];
+// ── Step 4: Build & Push ────────────────────────────────────────
+function getVal(row,field){
+  const col=Object.entries(S.colMap).find(([,v])=>v===field)?.[0];
   if(col&&row&&row[col]!==undefined&&row[col]!=='')return row[col];
-  if(S.manualVals[fieldName])return S.manualVals[fieldName];
-  return '';
+  if(S.manualVals[field])return S.manualVals[field];
+  return'';
 }
 
-function resolveRow(row){
-  // Compute student-specific calculated fields
-  const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
-  const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
-  const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
-  const sid=(fn||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3)+mob.slice(-4);
-  const totalFee=(parseFloat(getVal(row,'fee_per_head')||0)*S.fileRows.length).toFixed(0);
-  const feePaid=getVal(row,'fee_paid')||totalFee;
-  const pending=(parseFloat(totalFee)-parseFloat(feePaid)).toFixed(0);
-  return {fn,mn,ln,fullName,sid,totalFee,feePaid,pending};
-}
-
-function nodeXML(node,data,repeatDataMap,depth=1){
+function nodeXML(node,data,repMap,depth=1){
   const pad='  '.repeat(depth);
-  if(node.t==='root') return node.ch.map(c=>nodeXML(c,data,repeatDataMap,depth)).join('');
+  if(node.t==='root')return node.ch.map(c=>nodeXML(c,data,repMap,depth)).join('');
   if(node.t==='group'){
-    const inner=node.ch.map(c=>nodeXML(c,data,repeatDataMap,depth+1)).join('');
-    return `${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+    const inner=node.ch.map(c=>nodeXML(c,data,repMap,depth+1)).join('');
+    return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
   }
   if(node.t==='repeat'){
-    const rows=repeatDataMap[node.name]||[];
+    const rows=repMap[node.name]||[];
     return rows.map(row=>{
-      const comp=resolveRow(row);
-      const fieldData=n=>{
-        if(n==='full_name')return comp.fullName;
-        if(n==='student_id')return comp.sid;
-        if(n==='total_fee')return comp.totalFee;
-        if(n==='pending_balance')return comp.pending;
-        const v=getVal(row,n);
-        // Date formatting
-        if(n.includes('date'))return fmtDate(v);
-        return v;
-      };
+      const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
+      const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
+      const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
+      const sid=(fn||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3)+mob.slice(-4);
+      const fph=parseFloat(getVal(data,'fee_per_head')||0);
+      const total=(fph*S.fileRows.length).toFixed(0);
+      const paid=getVal(data,'fee_paid')||total;
+      const pending=(parseFloat(total)-parseFloat(paid)).toFixed(0);
+      const comp={full_name:fullName,student_id:sid,total_fee:total,pending_balance:pending};
       const inner=node.ch.map(c=>{
-        if(c.t==='field')return`  ${pad}<${c.name}>${esc(fieldData(c.name))}</${c.name}>\n`;
-        return nodeXML(c,row,{},depth+2);
+        if(c.t!=='field')return nodeXML(c,row,{},depth+2);
+        const v=comp[c.name]!==undefined?comp[c.name]:getVal(row,c.name);
+        return`  ${pad}<${c.name}>${esc(c.name.includes('date')?fmtDate(v):v)}</${c.name}>\n`;
       }).join('');
-      return `${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+      return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
     }).join('');
   }
   if(node.t==='field'){
     let v=getVal(data,node.name);
-    if(node.name==='total_fee'){const fph=parseFloat(getVal(data,'fee_per_head')||0);v=(fph*(S.mode==='batch'?S.fileRows.length:1)).toFixed(0);}
-    if(node.name.includes('date'))v=fmtDate(v);
     if(node.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
+    if(node.name.includes('date'))v=fmtDate(v);
     return`${pad}<${node.name}>${esc(v)}</${node.name}>\n`;
   }
   return'';
 }
 
-function buildXML(enrollData,repeatDataMap){
-  const id=newUUID();
-  const fid=S.form.idString;
+function buildXML(enrollData,repMap){
+  const id=uuid();const fid=S.form.idString;
   let xml=`<?xml version='1.0' ?>\n<${fid} id="${fid}">\n`;
   xml+=`  <formhub><uuid>${id}</uuid></formhub>\n`;
-  xml+=nodeXML(S.tree,enrollData,repeatDataMap,1);
-  xml+=`  <meta>\n    <instanceID>uuid:${id}</instanceID>\n  </meta>\n`;
-  xml+=`</${fid}>`;
+  xml+=nodeXML(S.tree,enrollData,repMap,1);
+  xml+=`  <meta>\n    <instanceID>uuid:${id}</instanceID>\n  </meta>\n</${fid}>`;
   return xml;
 }
 
 function getSubmissions(){
   if(S.mode==='batch'&&S.repeats.length>0){
-    // All rows → one submission, rows go into selected repeat group
-    const enrollData={}; // from first row
-    for(const f of S.fields.filter(f=>!f.repeatGroup)){
-      enrollData[f.name]=getVal(S.fileRows[0],f.name);
-    }
-    const repeatDataMap={};
-    repeatDataMap[S.selRepeat]=S.fileRows;
-    const xml=buildXML(enrollData,repeatDataMap);
-    return [{label:`All ${S.fileRows.length} rows → 1 submission`,xml}];
+    const enrollData={};
+    for(const f of S.fields.filter(f=>!f.repeatGroup))enrollData[f.name]=getVal(S.fileRows[0],f.name);
+    const repMap={};repMap[S.selRepeat]=S.fileRows;
+    return[{label:`All ${S.fileRows.length} rows → 1 submission`,xml:buildXML(enrollData,repMap)}];
   }else{
     return S.fileRows.map((row,i)=>{
-      const xml=buildXML(row,{});
       const name=getVal(row,'first_name')||getVal(row,'full_name')||`Row ${i+1}`;
-      return {label:name,xml};
+      return{label:name,xml:buildXML(row,{})};
     });
   }
 }
@@ -681,13 +590,10 @@ function buildPushSummary(){
     </div>
     <div class="alert alert-a" style="font-size:12px;">
       ${S.mode==='batch'&&S.repeats.length>0
-        ?`<strong>Batch:</strong> All <strong>${S.fileRows.length} rows</strong> → 1 submission with repeat group <strong>${S.selRepeat}</strong>`
-        :`<strong>Per-Row:</strong> <strong>${S.fileRows.length} rows</strong> → ${S.fileRows.length} separate submissions`
-      }
+        ?`<strong>Batch:</strong> ${S.fileRows.length} rows → 1 submission, repeat group: <strong>${S.selRepeat}</strong>`
+        :`<strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions`}
     </div>
-    <div style="margin:10px 0;font-size:12px;color:var(--muted);">
-      Submitting to: <code style="color:var(--txt)">${CFG.server}/api/v1/submissions</code>
-    </div>`;
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/api/v1/submissions</code></div>`;
 }
 
 async function startPush(){
@@ -697,71 +603,52 @@ async function startPush(){
   document.getElementById('pushBtn').disabled=true;
   document.getElementById('s4back').disabled=true;
   document.getElementById('pushBtn').textContent='Pushing…';
-
   const results=[];
-  const resList=document.getElementById('pushRes');
-  resList.innerHTML='<div id="resItems"></div>';
-
+  document.getElementById('pushRes').innerHTML='<div id="resItems"></div>';
   for(let i=0;i<subs.length;i++){
     const sub=subs[i];
     document.getElementById('progFill').style.width=`${Math.round((i/subs.length)*100)}%`;
     document.getElementById('progTxt').textContent=`${i+1}/${subs.length} — ${sub.label}`;
-
     let ok=false,status='',msg='';
     try{
       const fd=new FormData();
       fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
       const r=await fetch(`${CFG.server}/api/v1/submissions`,{
-        method:'POST',
-        headers:{'Authorization':`Token ${CFG.token}`},
-        body:fd
+        method:'POST',headers:{'Authorization':`Token ${CFG.token}`},body:fd
       });
-      status=String(r.status);
-      msg=await r.text();
-      ok=r.status===201||r.status===202;
-    }catch(e){msg=e.message;}
-
+      status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
+    }catch(e){
+      msg=e.message==='Failed to fetch'?'CORS error — make sure to open via local server (python3 -m http.server 8080)':e.message;
+    }
     results.push({label:sub.label,ok,status,msg});
-    const ri=document.getElementById('resItems');
-    ri.innerHTML+=`<div class="res-item">
+    document.getElementById('resItems').innerHTML+=`<div class="res-item">
       <div class="res-icon">${ok?'✅':'❌'}</div>
       <div style="flex:1;min-width:0;">
         <div>${sub.label}</div>
-        <div class="res-sub">${ok?`HTTP ${status} OK`:`HTTP ${status||'error'} — ${msg.slice(0,80)}`}</div>
+        <div class="res-sub">${ok?`HTTP ${status} OK`:`${status?'HTTP '+status+' — ':''}${msg.slice(0,120)}`}</div>
       </div>
     </div>`;
   }
-
   document.getElementById('progFill').style.width='100%';
-  const passed=results.filter(r=>r.ok).length;
-  const failed=results.length-passed;
-  document.getElementById('progTxt').innerHTML=
-    `Done — <span style="color:var(--green)">${passed} pushed</span>${failed?` · <span style="color:var(--red)">${failed} failed</span>`:''}`;
+  const passed=results.filter(r=>r.ok).length,failed=results.length-passed;
+  document.getElementById('progTxt').innerHTML=`Done — <span style="color:var(--green)">${passed} pushed</span>${failed?` · <span style="color:var(--red)">${failed} failed</span>`:''}`;
+  document.getElementById('pushBtn').disabled=false;document.getElementById('s4back').disabled=false;
   document.getElementById('pushBtn').textContent='Push to KoboToolbox →';
-  document.getElementById('pushBtn').disabled=false;
-  document.getElementById('s4back').disabled=false;
 }
 
 function downloadXMLs(){
   const subs=getSubmissions();
-  if(subs.length===1){
-    dl(subs[0].xml,'submission.xml');
-  }else{
-    subs.forEach((s,i)=>{
-      const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
-      setTimeout(()=>dl(s.xml,`submission_${i+1}_${safe}.xml`),i*200);
-    });
-  }
+  subs.forEach((s,i)=>{
+    const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+    setTimeout(()=>dl(s.xml,subs.length===1?'submission.xml':`submission_${i+1}_${safe}.xml`),i*150);
+  });
 }
-
 function dl(content,name){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([content],{type:'text/xml'}));
-  a.download=name;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
-// Close modal on overlay click
 document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
 </script>
 </body>
