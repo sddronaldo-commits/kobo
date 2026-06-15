@@ -550,7 +550,8 @@ function buildJSON(enrollData,repMap){
   }
 
   sub['meta']={instanceID:`uuid:${id}`};
-  return{id:S.form.uid,submission:sub};
+  // KoboCAT identifies forms by id_string (XForm name), not the asset UID
+  return{id:S.form.idString,submission:sub,_debug:{uid:S.form.uid,idString:S.form.idString}};
 }
 
 function getSubmissions(){
@@ -625,6 +626,13 @@ function buildPushSummary(){
 
 async function startPush(){
   const subs=getSubmissions();
+  // Show first payload in console for debugging
+  if(subs.length>0){
+    const preview=JSON.parse(JSON.stringify(subs[0].json));
+    delete preview._debug;
+    console.log('[KoboSync] Payload preview:', JSON.stringify(preview,null,2));
+    console.log('[KoboSync] id field:', subs[0].json.id, '| idString:', S.form.idString, '| uid:', S.form.uid);
+  }
   document.getElementById('pushProg').classList.remove('hidden');
   document.getElementById('pushRes').classList.remove('hidden');
   document.getElementById('pushBtn').disabled=true;
@@ -643,7 +651,7 @@ async function startPush(){
       const r=await fetch(PROXY+encodeURIComponent(endpoint),{
         method:'POST',
         headers:{'Authorization':`Token ${CFG.token}`,'Content-Type':'application/json','x-requested-with':'XMLHttpRequest'},
-        body:JSON.stringify(sub.json)
+        body:(()=>{const p=JSON.parse(JSON.stringify(sub.json));delete p._debug;return JSON.stringify(p);})()
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
@@ -654,7 +662,7 @@ async function startPush(){
       <div class="res-icon">${ok?'✅':'❌'}</div>
       <div style="flex:1;min-width:0;">
         <div>${sub.label}</div>
-        <div class="res-sub">${ok?`HTTP ${status} OK`:`${status?'HTTP '+status+' — ':''}${msg.slice(0,120)}`}</div>
+        <div class="res-sub">${ok?`HTTP ${status} OK`:`${status?'HTTP '+status+' — ':''}${msg.slice(0,300)}`}</div>
       </div>
     </div>`;
   }
@@ -756,7 +764,8 @@ function downloadXMLs(){
   const subs=getSubmissions();
   subs.forEach((s,i)=>{
     const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
-    setTimeout(()=>dl(JSON.stringify(s.json,null,2),subs.length===1?'submission.json':`submission_${i+1}_${safe}.json`),i*150);
+    const payload=JSON.parse(JSON.stringify(s.json));delete payload._debug;
+    setTimeout(()=>dl(JSON.stringify(payload,null,2),subs.length===1?'submission.json':`submission_${i+1}_${safe}.json`),i*150);
   });
 }
 function dl(content,name){
