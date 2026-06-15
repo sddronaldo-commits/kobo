@@ -575,11 +575,11 @@ function nodeXML(node,data,repMap,depth){
 
 function buildXML(enrollData,repMap){
   const instId=uuid();
-  const fid=S.form.idString||S.form.uid;
-  let xml=`<?xml version='1.0' ?>\n<${fid} id="${fid}">\n`;
+  const fid=S.form.uid;
+  let xml=`<?xml version='1.0' ?>\n<data id="${fid}">\n`;
   xml+=`  <formhub><uuid>${uuid()}</uuid></formhub>\n`;
   xml+=nodeXML(S.tree,enrollData,repMap,1);
-  xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</${fid}>`;
+  xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</data>`;
   return xml;
 }
 
