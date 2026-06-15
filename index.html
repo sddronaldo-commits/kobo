@@ -396,7 +396,7 @@ function buildTree(survey){
       const node={t:f.type==='begin_repeat'?'repeat':'group',name:f.name,ch:[]};
       par.ch.push(node);stk.push(node);
     }else if(f.type==='end_group'||f.type==='end_repeat'){stk.pop();}
-    else if(!['note','calculate','hidden','trigger'].includes(f.type)){
+    else if(!['note','hidden','trigger'].includes(f.type)){  // include calculate so values get submitted
       par.ch.push({t:'field',name:f.name,ft:f.type});
     }
   }
@@ -410,7 +410,7 @@ function flatFields(survey){
     else if(f.type==='end_repeat')repeat=null;
     else if(f.type==='begin_group')grpStk.push(f.name);
     else if(f.type==='end_group')grpStk.pop();
-    else if(!['note','calculate','hidden','trigger'].includes(f.type)){
+    else if(!['note','hidden','trigger'].includes(f.type)){  // include calculate so values get submitted
       out.push({name:f.name,label:lstr(f.label)||f.name,type:f.type,
         group:grpStk[grpStk.length-1]||null,repeatGroup:repeat||null,
         required:f.required===true||f.required==='true'});
@@ -575,9 +575,11 @@ function nodeXML(node,data,repMap,depth){
 
 function buildXML(enrollData,repMap){
   const instId=uuid();
-  let xml=`<?xml version='1.0' ?>\n<data id="${S.form.uid}">\n`;
+  const fid=S.form.idString||S.form.uid;
+  let xml=`<?xml version='1.0' ?>\n<${fid} id="${fid}">\n`;
+  xml+=`  <formhub><uuid>${uuid()}</uuid></formhub>\n`;
   xml+=nodeXML(S.tree,enrollData,repMap,1);
-  xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</data>`;
+  xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</${fid}>`;
   return xml;
 }
 
@@ -649,7 +651,13 @@ function buildPushSummary(){
         :`<div class="alert alert-a" style="font-size:12px;"><strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions</div>`
     }
     ${batchBreakdown}
-    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/${S.form?.username||CFG.username||'?'}/submission</code></div>`;
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/${S.form?.username||CFG.username||'?'}/submission</code></div>
+    <details style="margin-top:10px;font-size:12px;">
+      <summary style="cursor:pointer;color:var(--muted);user-select:none;">🔍 Preview XML (first submission)</summary>
+      <pre id="xmlPreview" style="margin-top:8px;padding:10px;background:var(--bg);border:1px solid var(--bdr);border-radius:6px;font-size:10px;overflow-x:auto;white-space:pre;max-height:200px;overflow-y:auto;color:var(--muted);"></pre>
+    </details>`;
+  // Populate XML preview
+  try{const prev=getSubmissions()[0];if(prev?.xml)document.getElementById('xmlPreview').textContent=prev.xml.slice(0,2000)+(prev.xml.length>2000?'\n…':'');}catch(e){}
 }
 
 async function startPush(){
@@ -755,38 +763,6 @@ function downloadTemplate(){
   });
 
   XLSX.utils.book_append_sheet(wb,ws,'Registration Data');
-
-  // ── Sheet 2: How to Fill ──────────────────────────────────────
-  const help=[
-    ['HOW TO FILL THIS TEMPLATE',''],
-    ['',''],
-    ['⚠️ IMPORTANT','Row 1 contains field names (e.g. batch_number). Do not delete or rename these — KoboSync uses them for auto-mapping.'],
-    ['','Row 2 shows the human-readable label for reference. Row 3 shows format hints. Data starts from Row 4.'],
-    ['',''],
-    ['STEP 1','Fill in the data starting from Row 4 of the Registration Data sheet.'],
-    ['STEP 2', isBatch
-      ?`Fill BATCH INFO columns (${enrollFields.map(f=>f.name).slice(0,3).join(', ')}…) once in the first row of your batch.`
-      :'Fill every column — each row becomes one submission.'],
-    ['STEP 3', isBatch
-      ?'Fill STUDENT DETAILS columns for each student — one row per student.'
-      :'Add as many rows as needed.'],
-    ['STEP 4', isBatch
-      ?'For multiple batches: add all students, each row with the correct batch_number. The tool auto-splits by batch.'
-      :''],
-    ['STEP 5','Save as .xlsx and upload to KoboSync.'],
-    ['',''],
-    ['TIPS',''],
-    ['Dates','YYYY-MM-DD  e.g. 2025-06-15'],
-    ['Mobile numbers','10 digits, no spaces or dashes  e.g. 9876543210'],
-    ['Fee / amount fields','Numbers only, no ₹ symbol  e.g. 2500'],
-    ['',''],
-    ['FIELD REFERENCE',''],
-    ['Field Name','Human Label  |  Type'],
-    ...allFields.map(f=>[f.name, `${f.label||f.name}  |  ${f.type||'text'}`]),
-  ];
-  const wsHelp=XLSX.utils.aoa_to_sheet(help);
-  wsHelp['!cols']=[{wch:28},{wch:70}];
-  XLSX.utils.book_append_sheet(wb,wsHelp,'How to Fill');
 
   // ── Download ──────────────────────────────────────────────────
   XLSX.writeFile(wb,`${formName}_template.xlsx`);
