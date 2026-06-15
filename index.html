@@ -528,45 +528,60 @@ function setColMap(fieldName,col){
 
 // ── Step 4: Build & Push ────────────────────────────────────────
 function getVal(row,field){
+  // Check if row is pre-processed (keyed by field name, e.g. enrollData)
+  if(row&&row[field]!==undefined&&row[field]!=='')return String(row[field]);
+  // Otherwise look up the column mapped to this field name
   const col=Object.entries(S.colMap).find(([,v])=>v===field)?.[0];
-  if(col&&row&&row[col]!==undefined&&row[col]!=='')return row[col];
+  if(col&&row&&row[col]!==undefined&&row[col]!=='')return String(row[col]);
   if(S.manualVals[field])return S.manualVals[field];
   return'';
 }
 
-function buildXML(enrollData,repMap){
-  const instId=uuid();
-  const uid=S.form.uid;
-  let xml=`<?xml version='1.0' ?>\n<data id="${uid}">\n`;
-  for(const f of S.fields.filter(f=>!f.repeatGroup)){
-    let v=getVal(enrollData,f.name);
-    if(f.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
-    if(f.name.includes('date'))v=fmtDate(v);
-    xml+=`  <${f.name}>${esc(v)}</${f.name}>\n`;
+function nodeXML(node,data,repMap,depth){
+  const pad='  '.repeat(depth);
+  if(node.t==='root')return node.ch.map(c=>nodeXML(c,data,repMap,depth)).join('');
+  if(node.t==='group'){
+    const inner=node.ch.map(c=>nodeXML(c,data,repMap,depth+1)).join('');
+    return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
   }
-  for(const [groupName,rows] of Object.entries(repMap)){
-    const fph=parseFloat(getVal(enrollData,'fee_per_head')||0);
-    for(const row of rows){
+  if(node.t==='repeat'){
+    const rows=repMap[node.name]||[];
+    const fph=parseFloat(getVal(data,'fee_per_head')||0);
+    return rows.map(row=>{
       const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
       const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
       const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
       const sid=(fn||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3)+mob.slice(-4);
       const total=(fph*rows.length).toFixed(0);
-      const paid=getVal(enrollData,'fee_paid')||total;
+      const paid=getVal(data,'fee_paid')||total;
       const pending=(parseFloat(total)-parseFloat(paid)).toFixed(0);
       const computed={full_name:fullName,student_id:sid,total_fee:total,pending_balance:pending};
-      xml+=`  <${groupName}>\n`;
-      for(const f of S.fields.filter(f=>f.repeatGroup===groupName)){
-        let v=computed[f.name]!==undefined?computed[f.name]:getVal(row,f.name);
-        if(f.name.includes('date'))v=fmtDate(v);
-        xml+=`    <${f.name}>${esc(v)}</${f.name}>\n`;
-      }
-      xml+=`  </${groupName}>\n`;
-    }
+      const inner=node.ch.map(c=>{
+        if(c.t!=='field')return nodeXML(c,row,{},depth+2);
+        const v=computed[c.name]!==undefined?computed[c.name]:getVal(row,c.name);
+        return`  ${pad}<${c.name}>${esc(c.name.includes('date')?fmtDate(v):v)}</${c.name}>\n`;
+      }).join('');
+      return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+    }).join('');
   }
+  if(node.t==='field'){
+    let v=getVal(data,node.name);
+    if(node.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
+    if(node.name.includes('date'))v=fmtDate(v);
+    return`${pad}<${node.name}>${esc(v)}</${node.name}>\n`;
+  }
+  return'';
+}
+
+function buildXML(enrollData,repMap){
+  const instId=uuid();
+  let xml=`<?xml version='1.0' ?>\n<data id="${S.form.uid}">\n`;
+  xml+=nodeXML(S.tree,enrollData,repMap,1);
   xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</data>`;
   return xml;
 }
+
+
 function getSubmissions(){
   if(S.mode==='batch'&&S.repeats.length>0){
     // Check whether batch_number is mapped to a column
@@ -703,28 +718,35 @@ function downloadTemplate(){
   const wb=XLSX.utils.book_new();
 
   // ── Sheet 1: Data template ────────────────────────────────────
+  // CRITICAL: Row 0 must be field names — SheetJS uses row 0 as column headers
+  // when reading back, so this is what drives auto-mapping in KoboSync Step 3.
   const rows=[];
 
-  // Row 0: section header labels
+  // Row 0: field names (SheetJS reads these as column headers — DO NOT change)
+  rows.push(allFields.map(f=>f.name));
+
+  // Row 1: human-readable labels — for the user to read, not used by tool
+  const labelRow=allFields.map(f=>f.label||f.name);
   if(isBatch){
-    const secRow=Array(allFields.length).fill('');
-    secRow[0]=`BATCH INFO — fill once per batch (columns A–${XLSX.utils.encode_col(nb-1)})`;
-    if(repeatFields.length)secRow[nb]=`STUDENT DETAILS — one row per student (columns ${XLSX.utils.encode_col(nb)}–${XLSX.utils.encode_col(allFields.length-1)})`;
-    rows.push(secRow);
+    labelRow[0]='◀ BATCH INFO (fill once per batch) — '+labelRow[0];
+    if(repeatFields.length)labelRow[nb]='◀ STUDENT DETAILS (one row per student) — '+labelRow[nb];
   }
+  rows.push(labelRow);
 
-  // Row 1: human-readable labels (use label if available, else name)
-  rows.push(allFields.map(f=>f.label||f.name));
+  // Row 2: hints
+  rows.push(allFields.map(f=>{
+    if(f.name.includes('date'))return'YYYY-MM-DD';
+    if(f.name.includes('mobile'))return'10 digits, no spaces';
+    if(f.name.includes('fee')||f.name==='num_students')return'number only';
+    return'';
+  }));
 
-  // Row 2: field names (for reference)
-  rows.push(allFields.map(f=>`field: ${f.name}`));
-
-  // Row 3: blank example row
+  // Row 3: blank — start filling from here
   rows.push(allFields.map(()=>''));
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
 
-  // Column widths — wider for name/label/address fields
+  // Column widths
   ws['!cols']=allFields.map(f=>{
     const n=f.name.toLowerCase();
     if(n.includes('name')||n.includes('address')||n.includes('course')||n.includes('lab'))return{wch:24};
@@ -732,43 +754,38 @@ function downloadTemplate(){
     return{wch:14};
   });
 
-  // Merge section header cells
-  if(isBatch&&rows.length>3){
-    ws['!merges']=[
-      {s:{r:0,c:0},e:{r:0,c:nb-1}},
-      ...(repeatFields.length?[{s:{r:0,c:nb},e:{r:0,c:allFields.length-1}}]:[])
-    ];
-  }
-
   XLSX.utils.book_append_sheet(wb,ws,'Registration Data');
 
   // ── Sheet 2: How to Fill ──────────────────────────────────────
   const help=[
     ['HOW TO FILL THIS TEMPLATE',''],
     ['',''],
-    ['STEP 1','Load this file into KoboSync → Upload File step.'],
+    ['⚠️ IMPORTANT','Row 1 contains field names (e.g. batch_number). Do not delete or rename these — KoboSync uses them for auto-mapping.'],
+    ['','Row 2 shows the human-readable label for reference. Row 3 shows format hints. Data starts from Row 4.'],
+    ['',''],
+    ['STEP 1','Fill in the data starting from Row 4 of the Registration Data sheet.'],
     ['STEP 2', isBatch
-      ?`Fill BATCH INFO columns (A–${XLSX.utils.encode_col(nb-1)}) once — same values for every row in a batch.`
+      ?`Fill BATCH INFO columns (${enrollFields.map(f=>f.name).slice(0,3).join(', ')}…) once in the first row of your batch.`
       :'Fill every column — each row becomes one submission.'],
     ['STEP 3', isBatch
-      ?`Fill STUDENT DETAILS columns (${XLSX.utils.encode_col(nb)} onward) — one row per student.`
+      ?'Fill STUDENT DETAILS columns for each student — one row per student.'
       :'Add as many rows as needed.'],
     ['STEP 4', isBatch
-      ?'To include multiple batches, just keep adding rows — the tool auto-splits by batch_number.'
+      ?'For multiple batches: add all students, each row with the correct batch_number. The tool auto-splits by batch.'
       :''],
     ['STEP 5','Save as .xlsx and upload to KoboSync.'],
     ['',''],
     ['TIPS',''],
-    ['Dates','Use YYYY-MM-DD format  e.g. 2025-06-15'],
+    ['Dates','YYYY-MM-DD  e.g. 2025-06-15'],
     ['Mobile numbers','10 digits, no spaces or dashes  e.g. 9876543210'],
     ['Fee / amount fields','Numbers only, no ₹ symbol  e.g. 2500'],
-    ['Multiple batches', isBatch?'Add a batch_number column — the tool groups rows with the same number into one submission.':'n/a'],
     ['',''],
-    ['FIELDS IN THIS FORM',''],
-    ...allFields.map(f=>[f.label||f.name, `field name: ${f.name}  |  type: ${f.type||'text'}`]),
+    ['FIELD REFERENCE',''],
+    ['Field Name','Human Label  |  Type'],
+    ...allFields.map(f=>[f.name, `${f.label||f.name}  |  ${f.type||'text'}`]),
   ];
   const wsHelp=XLSX.utils.aoa_to_sheet(help);
-  wsHelp['!cols']=[{wch:22},{wch:70}];
+  wsHelp['!cols']=[{wch:28},{wch:70}];
   XLSX.utils.book_append_sheet(wb,wsHelp,'How to Fill');
 
   // ── Download ──────────────────────────────────────────────────
