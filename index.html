@@ -582,7 +582,7 @@ function getSubmissions(){
       const enrollData={};
       for(const f of S.fields.filter(f=>!f.repeatGroup))enrollData[f.name]=getVal(S.fileRows[0],f.name);
       const repMap={};repMap[S.selRepeat]=S.fileRows;
-      return[{label:`All ${S.fileRows.length} rows → 1 submission`,xml:buildXML(enrollData,repMap)}];
+      return[{label:`All ${S.fileRows.length} rows → 1 submission`,json:buildJSON(enrollData,repMap)}];
     }
   }else{
     return S.fileRows.map((row,i)=>{
@@ -620,7 +620,7 @@ function buildPushSummary(){
         :`<div class="alert alert-a" style="font-size:12px;"><strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions</div>`
     }
     ${batchBreakdown}
-    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/api/v2/assets/${S.form?.uid}/submission/</code></div>`;
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${getKCServer(CFG.server)}/api/v1/submissions</code></div>`;
 }
 
 async function startPush(){
