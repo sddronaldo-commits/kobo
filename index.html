@@ -357,7 +357,33 @@ async function loadForm(){
     res.innerHTML=`<div class="alert alert-g">✅ <strong>${d.name}</strong> — ${plural(S.fields.length,'field')}${ri}</div>
       <div style="margin-top:8px">${S.fields.map(f=>`<span class="chip ${f.repeatGroup?'chip-a':'chip-g'}" title="${f.name}">${f.label||f.name}</span>`).join('')}</div>`;
     document.getElementById('formNameBadge').textContent=d.name;
-    setTimeout(()=>goStep(2),700);
+
+    // Look up the form on KoboCAT to get the exact identifier KC uses for submissions
+    try{
+      const kcR=await fetch(PROXY+encodeURIComponent(`${getKCServer(CFG.server)}/api/v1/forms/`),{
+        headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'}
+      });
+      if(kcR.ok){
+        const kcForms=await kcR.json();
+        console.log('[KoboSync] KC forms available:',kcForms.map(f=>f.id_string+'('+f.formid+')'));
+        const match=kcForms.find(f=>f.id_string===idStr||f.id_string===uid||String(f.formid)===uid);
+        if(match){
+          S.form.kcIdString=match.id_string;
+          S.form.kcFormId=match.formid;
+          res.innerHTML+=`<div class="alert alert-g" style="margin-top:8px;font-size:12px;">✅ Found on KoboCAT: <code>${match.id_string}</code> (formid: ${match.formid})</div>`;
+          console.log('[KoboSync] Matched KC form:',match.id_string,match.formid);
+        }else{
+          S.form.kcIdString=null;
+          res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Form not found on KoboCAT — available: ${kcForms.map(f=>f.id_string).join(', ')||'none'}</div>`;
+        }
+      }else{
+        res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Could not reach KoboCAT (${kcR.status}) — will attempt submission anyway.</div>`;
+      }
+    }catch(e){
+      console.warn('[KoboSync] KC lookup error:',e.message);
+    }
+
+    setTimeout(()=>goStep(2),1200);
   }catch(e){
     res.innerHTML=`<div class="alert alert-r">
       ❌ ${esc(e.message)}
@@ -550,8 +576,9 @@ function buildJSON(enrollData,repMap){
   }
 
   sub['meta']={instanceID:`uuid:${id}`};
-  // KoboCAT identifies forms by id_string (XForm name), not the asset UID
-  return{id:S.form.idString,submission:sub,_debug:{uid:S.form.uid,idString:S.form.idString}};
+  // Use the id_string KoboCAT returned during form lookup, fall back to idString then uid
+  const kcId=S.form.kcIdString||S.form.idString||S.form.uid;
+  return{id:kcId,submission:sub,_debug:{kcId,uid:S.form.uid,idString:S.form.idString}};
 }
 
 function getSubmissions(){
