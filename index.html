@@ -164,7 +164,7 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <div class="fg">
         <label class="lbl">Form URL or Asset UID</label>
         <div class="inp-row">
-          <input class="inp" id="assetUid" placeholder="Paste full URL or just the UID  e.g. aXXXXXXXXXXXXXXXXXXXXXX" />
+          <input class="inp" id="assetUid" placeholder="Paste full URL or just the UID  e.g. aXXXXXXXXXXXXXXXXXXXXXX" value="" />
           <button class="btn btn-green" id="loadBtn" onclick="loadForm()">Load Form</button>
         </div>
         <div class="helper">You can paste the full browser URL — the UID will be extracted automatically.</div>
@@ -250,8 +250,10 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
 // ═══════════════════════════════════════════════════════════════
 //  CONFIGURE: hardcode token + server so you never have to re-enter
 // ═══════════════════════════════════════════════════════════════
-const FIXED_TOKEN  = "";                           // ← paste token here
-const FIXED_SERVER = "https://eu.kobotoolbox.org"; // ← your server
+const FIXED_TOKEN  = "be8d9189ac085ed0345b12ee0ae622d4e93b3ba0";
+const FIXED_SERVER = "https://eu.kobotoolbox.org";
+const FIXED_UID    = "aUGFUJbP5UG4Y6rthA3LKR";
+const PROXY        = "https://corsproxy.io/?";     // needed for GitHub Pages
 // ═══════════════════════════════════════════════════════════════
 
 let CFG = { server: FIXED_SERVER || "https://eu.kobotoolbox.org", token: FIXED_TOKEN || "" };
@@ -302,6 +304,8 @@ function saveSettings(){
   closeSettings(); updateNav();
 }
 updateNav();
+// Pre-fill UID if hardcoded
+if(FIXED_UID)document.getElementById('assetUid').value=FIXED_UID;
 
 // ── Steps ───────────────────────────────────────────────────────
 function goStep(n){
@@ -327,8 +331,8 @@ async function loadForm(){
   btn.innerHTML='<span class="spin">⟳</span> Loading…';btn.disabled=true;
   const res=document.getElementById('loadResult');res.innerHTML='';
   try{
-    const r=await fetch(`${CFG.server}/api/v2/assets/${uid}/`,{
-      headers:{'Authorization':`Token ${CFG.token}`}
+    const r=await fetch(PROXY+encodeURIComponent(`${CFG.server}/api/v2/assets/${uid}/`),{
+      headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'}
     });
     if(!r.ok)throw new Error(`HTTP ${r.status} — ${await r.text()}`);
     const d=await r.json();
@@ -592,8 +596,8 @@ async function startPush(){
     try{
       const fd=new FormData();
       fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
-      const r=await fetch(`${CFG.server}/api/v1/submissions`,{
-        method:'POST',headers:{'Authorization':`Token ${CFG.token}`},body:fd
+      const r=await fetch(PROXY+encodeURIComponent(`${CFG.server}/api/v1/submissions`),{
+        method:'POST',headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'},body:fd
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
