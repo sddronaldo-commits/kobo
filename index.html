@@ -262,6 +262,7 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
 const FIXED_TOKEN  = "be8d9189ac085ed0345b12ee0ae622d4e93b3ba0";
 const FIXED_SERVER = "https://eu.kobotoolbox.org";
 const FIXED_UID    = "aUGFUJbP5UG4Y6rthA3LKR";
+const FIXED_OWNER  = "lahimel";  // form owner — used in /{owner}/submission endpoint
 const PROXY        = "https://corsproxy.io/?";     // needed for GitHub Pages
 // Derive the KoboCAT submission server from the main server
 // eu.kobotoolbox.org → kc-eu.kobotoolbox.org
@@ -271,7 +272,7 @@ function getKCServer(server){
 }
 // ═══════════════════════════════════════════════════════════════
 
-let CFG = { server: FIXED_SERVER || "https://eu.kobotoolbox.org", token: FIXED_TOKEN || "" };
+let CFG = { server: FIXED_SERVER || "https://eu.kobotoolbox.org", token: FIXED_TOKEN || "", username: FIXED_OWNER||"" };
 try {
   const s = localStorage.getItem("kobosync_cfg");
   if (s) { const c = JSON.parse(s); if(!FIXED_SERVER) CFG.server=c.server||CFG.server; if(!FIXED_TOKEN) CFG.token=c.token||CFG.token; }
@@ -363,23 +364,19 @@ async function loadForm(){
       <div style="margin-top:8px">${S.fields.map(f=>`<span class="chip ${f.repeatGroup?'chip-a':'chip-g'}" title="${f.name}">${f.label||f.name}</span>`).join('')}</div>`;
     document.getElementById('formNameBadge').textContent=d.name;
 
-    // Fetch username — needed for /{username}/submission endpoint
-    try{
-      const profR=await fetch(PROXY+encodeURIComponent(`${CFG.server}/api/v1/profiles/me/`),{
-        headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'}
-      });
-      if(profR.ok){
-        const prof=await profR.json();
-        S.form.username=prof.username||'';
-        res.innerHTML+=`<div class="alert alert-g" style="margin-top:8px;font-size:12px;">👤 Submitting as <strong>${S.form.username}</strong> → <code>${CFG.server}/${S.form.username}/submission</code></div>`;
-      }else{
-        res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Could not fetch username — enter it manually in ⚙️ Settings.</div>`;
-      }
-    }catch(e){
-      console.warn('[KoboSync] Profile error:',e);
+    // Submission endpoint uses the FORM OWNER's username (not the logged-in user's)
+    // e.g. form owned by "lahimel" → eu.kobotoolbox.org/lahimel/submission
+    const ownerUrl=d.owner||'';
+    const ownerMatch=ownerUrl.match(/\/users\/([^\/]+)\/?$/);
+    const detectedOwner=d.owner__username||d.project_owner||(ownerMatch?ownerMatch[1]:'');
+    S.form.username=CFG.username||detectedOwner||'';
+    if(S.form.username){
+      res.innerHTML+=`<div class="alert alert-g" style="margin-top:8px;font-size:12px;">👤 Owner: <strong>${S.form.username}</strong> → endpoint: <code>${CFG.server}/${S.form.username}/submission</code></div>`;
+    }else{
+      res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Form owner not found — enter username in ⚙️ Settings before pushing.</div>`;
     }
 
-    setTimeout(()=>goStep(2),1200);
+    setTimeout(()=>goStep(2),700);
   }catch(e){
     res.innerHTML=`<div class="alert alert-r">
       ❌ ${esc(e.message)}
