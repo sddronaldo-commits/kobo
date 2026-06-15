@@ -550,7 +550,7 @@ function buildJSON(enrollData,repMap){
   }
 
   sub['meta']={instanceID:`uuid:${id}`};
-  return{id:S.form.idString,submission:sub};
+  return{id:S.form.uid,submission:sub};
 }
 
 function getSubmissions(){
