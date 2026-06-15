@@ -560,9 +560,13 @@ function getSubmissions(){
     const batchCol=Object.entries(S.colMap).find(([,v])=>v==='batch_number')?.[0];
     if(batchCol){
       // Group rows by their batch_number value — one submission per unique batch
+      // Carry forward the last seen batch number (fill-down) so only row 1 needs it
       const groups={};const order=[];
+      let lastBN='';
       for(const row of S.fileRows){
-        const bn=String(row[batchCol]||'').trim()||'Unknown';
+        const raw=String(row[batchCol]||'').trim();
+        if(raw) lastBN=raw;           // update when a value is present
+        const bn=lastBN||'Unknown';   // fall back only if nothing seen yet
         if(!groups[bn]){groups[bn]=[];order.push(bn);}
         groups[bn].push(row);
       }
