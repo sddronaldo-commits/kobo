@@ -239,7 +239,7 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <div class="action-bar">
         <button class="btn btn-outline" id="s4back" onclick="goStep(3)">← Back</button>
         <div class="row">
-          <button class="btn btn-outline" onclick="downloadXMLs()">⬇ Download XML</button>
+          <button class="btn btn-outline" onclick="downloadXMLs()">⬇ Download JSON</button>
           <button class="btn btn-green" id="pushBtn" onclick="startPush()">Push to KoboToolbox →</button>
         </div>
       </div>
@@ -258,6 +258,12 @@ const FIXED_TOKEN  = "be8d9189ac085ed0345b12ee0ae622d4e93b3ba0";
 const FIXED_SERVER = "https://eu.kobotoolbox.org";
 const FIXED_UID    = "aUGFUJbP5UG4Y6rthA3LKR";
 const PROXY        = "https://corsproxy.io/?";     // needed for GitHub Pages
+// Derive the KoboCAT submission server from the main server
+// eu.kobotoolbox.org → kc-eu.kobotoolbox.org
+// kf.kobotoolbox.org → kc.kobotoolbox.org
+function getKCServer(server){
+  return server.replace('//eu.','//kc-eu.').replace('//kf.','//kc.');
+}
 // ═══════════════════════════════════════════════════════════════
 
 let CFG = { server: FIXED_SERVER || "https://eu.kobotoolbox.org", token: FIXED_TOKEN || "" };
@@ -509,49 +515,42 @@ function getVal(row,field){
   return'';
 }
 
-function nodeXML(node,data,repMap,depth=1){
-  const pad='  '.repeat(depth);
-  if(node.t==='root')return node.ch.map(c=>nodeXML(c,data,repMap,depth)).join('');
-  if(node.t==='group'){
-    const inner=node.ch.map(c=>nodeXML(c,data,repMap,depth+1)).join('');
-    return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
+function buildJSON(enrollData,repMap){
+  const id=uuid();
+  const sub={};
+
+  // Enrollment-level fields
+  for(const f of S.fields.filter(f=>!f.repeatGroup)){
+    let v=getVal(enrollData,f.name);
+    if(f.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
+    if(f.name.includes('date'))v=fmtDate(v);
+    sub[f.name]=v;
   }
-  if(node.t==='repeat'){
-    const rows=repMap[node.name]||[];
-    return rows.map(row=>{
+
+  // Repeat groups
+  for(const [groupName,rows] of Object.entries(repMap)){
+    const fph=parseFloat(getVal(enrollData,'fee_per_head')||0);
+    sub[groupName]=rows.map(row=>{
+      const student={};
       const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
       const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
       const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
       const sid=(fn||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3)+mob.slice(-4);
-      const fph=parseFloat(getVal(data,'fee_per_head')||0);
-      const total=(fph*S.fileRows.length).toFixed(0);
-      const paid=getVal(data,'fee_paid')||total;
+      const total=(fph*rows.length).toFixed(0);
+      const paid=getVal(enrollData,'fee_paid')||total;
       const pending=(parseFloat(total)-parseFloat(paid)).toFixed(0);
-      const comp={full_name:fullName,student_id:sid,total_fee:total,pending_balance:pending};
-      const inner=node.ch.map(c=>{
-        if(c.t!=='field')return nodeXML(c,row,{},depth+2);
-        const v=comp[c.name]!==undefined?comp[c.name]:getVal(row,c.name);
-        return`  ${pad}<${c.name}>${esc(c.name.includes('date')?fmtDate(v):v)}</${c.name}>\n`;
-      }).join('');
-      return`${pad}<${node.name}>\n${inner}${pad}</${node.name}>\n`;
-    }).join('');
+      const computed={full_name:fullName,student_id:sid,total_fee:total,pending_balance:pending};
+      for(const f of S.fields.filter(f=>f.repeatGroup===groupName)){
+        let v=computed[f.name]!==undefined?computed[f.name]:getVal(row,f.name);
+        if(f.name.includes('date'))v=fmtDate(v);
+        student[f.name]=v;
+      }
+      return student;
+    });
   }
-  if(node.t==='field'){
-    let v=getVal(data,node.name);
-    if(node.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
-    if(node.name.includes('date'))v=fmtDate(v);
-    return`${pad}<${node.name}>${esc(v)}</${node.name}>\n`;
-  }
-  return'';
-}
 
-function buildXML(enrollData,repMap){
-  const id=uuid();const fid=S.form.idString;
-  let xml=`<?xml version='1.0' ?>\n<${fid} id="${fid}">\n`;
-  xml+=`  <formhub><uuid>${id}</uuid></formhub>\n`;
-  xml+=nodeXML(S.tree,enrollData,repMap,1);
-  xml+=`  <meta>\n    <instanceID>uuid:${id}</instanceID>\n  </meta>\n</${fid}>`;
-  return xml;
+  sub['meta']={instanceID:`uuid:${id}`};
+  return{id:S.form.idString,submission:sub};
 }
 
 function getSubmissions(){
@@ -576,7 +575,7 @@ function getSubmissions(){
         for(const f of S.fields.filter(f=>!f.repeatGroup))
           enrollData[f.name]=getVal(rows[0],f.name);
         const repMap={};repMap[S.selRepeat]=rows;
-        return{label:`Batch ${bn} (${rows.length} student${rows.length===1?'':'s'})`,xml:buildXML(enrollData,repMap),batchNum:bn,count:rows.length};
+        return{label:`Batch ${bn} (${rows.length} student${rows.length===1?'':'s'})`,json:buildJSON(enrollData,repMap),batchNum:bn,count:rows.length};
       });
     }else{
       // No batch_number mapped — treat all rows as one submission (original behaviour)
@@ -588,7 +587,7 @@ function getSubmissions(){
   }else{
     return S.fileRows.map((row,i)=>{
       const name=getVal(row,'first_name')||getVal(row,'full_name')||`Row ${i+1}`;
-      return{label:name,xml:buildXML(row,{})};
+      return{label:name,json:buildJSON(row,{})};
     });
   }
 }
@@ -639,11 +638,12 @@ async function startPush(){
     document.getElementById('progTxt').textContent=`${i+1}/${subs.length} — ${sub.label}`;
     let ok=false,status='',msg='';
     try{
-      const fd=new FormData();
-      fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
-      const endpoint=`${CFG.server}/api/v2/assets/${S.form.uid}/submission/`;
+      const kcServer=getKCServer(CFG.server);
+      const endpoint=`${kcServer}/api/v1/submissions`;
       const r=await fetch(PROXY+encodeURIComponent(endpoint),{
-        method:'POST',headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'},body:fd
+        method:'POST',
+        headers:{'Authorization':`Token ${CFG.token}`,'Content-Type':'application/json','x-requested-with':'XMLHttpRequest'},
+        body:JSON.stringify(sub.json)
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
@@ -756,12 +756,12 @@ function downloadXMLs(){
   const subs=getSubmissions();
   subs.forEach((s,i)=>{
     const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
-    setTimeout(()=>dl(s.xml,subs.length===1?'submission.xml':`submission_${i+1}_${safe}.xml`),i*150);
+    setTimeout(()=>dl(JSON.stringify(s.json,null,2),subs.length===1?'submission.json':`submission_${i+1}_${safe}.json`),i*150);
   });
 }
 function dl(content,name){
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([content],{type:'text/xml'}));
+  a.href=URL.createObjectURL(new Blob([content],{type:'application/json'}));
   a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
