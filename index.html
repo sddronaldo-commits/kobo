@@ -121,11 +121,6 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <input class="inp" id="cfgToken" type="password" placeholder="Paste your API token…" />
       <div class="helper">Get it at: <strong>[your server]/token/</strong></div>
     </div>
-    <div style="margin-top:4px;padding:10px 12px;background:var(--abg);border:1px solid var(--abdr);border-radius:6px;font-size:12px;color:var(--amber);">
-      💡 <strong>CORS tip:</strong> If you see "Failed to fetch", don't open this file directly. Run a local server instead:<br>
-      <code style="display:block;margin-top:5px;color:var(--txt);">python3 -m http.server 8080</code>
-      Then open <code>http://localhost:8080/kobosync.html</code>
-    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-green" onclick="saveSettings()">Save</button>
@@ -175,19 +170,6 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
         <div class="helper">You can paste the full browser URL — the UID will be extracted automatically.</div>
       </div>
       <div id="loadResult"></div>
-    </div>
-
-    <!-- CORS warning panel -->
-    <div class="card" style="border-color:var(--abdr);background:var(--abg);">
-      <div class="card-head" style="color:var(--amber);margin-bottom:8px;">⚠️ Getting "Failed to fetch"?</div>
-      <div style="font-size:13px;color:var(--amber);line-height:1.7;">
-        Browsers block API calls from files opened via <code>file://</code>. Fix it by serving the file locally:<br><br>
-        <strong>Option 1 — Python (easiest):</strong><br>
-        <code style="display:block;margin:4px 0 10px;background:var(--bg);padding:7px 10px;border-radius:6px;color:var(--txt);">python3 -m http.server 8080</code>
-        Then open → <code style="color:var(--txt);">http://localhost:8080/kobosync.html</code><br><br>
-        <strong>Option 2 — Node:</strong><br>
-        <code style="display:block;margin:4px 0;background:var(--bg);padding:7px 10px;border-radius:6px;color:var(--txt);">npx serve .</code>
-      </div>
     </div>
   </div>
 
@@ -294,10 +276,8 @@ function plural(n,w){return`${n} ${w}${n===1?'':'s'}`;}
 // Extract UID from full URL if user pastes one
 function parseUID(input) {
   input = input.trim();
-  // Match patterns like /forms/aXXXXX/ or /#/forms/aXXXXX
   const m = input.match(/\/forms\/([a-zA-Z0-9]{20,})/);
   if (m) return m[1];
-  // Already a raw UID
   if (/^[a-zA-Z0-9]{15,}$/.test(input)) return input;
   return input;
 }
@@ -365,12 +345,11 @@ async function loadForm(){
     document.getElementById('formNameBadge').textContent=d.name;
     setTimeout(()=>goStep(2),700);
   }catch(e){
-    const isCORS=e.message==='Failed to fetch'||e.message.includes('NetworkError');
     res.innerHTML=`<div class="alert alert-r">
-      ❌ ${e.message}
-      ${isCORS?`<br><br><strong>This looks like a CORS error.</strong> Open this file via a local server:<br>
-      <code style="display:block;margin-top:6px;background:var(--bg);padding:6px 10px;border-radius:5px;color:var(--txt);">python3 -m http.server 8080</code>
-      Then visit <code>http://localhost:8080/kobosync.html</code>`:''}
+      ❌ ${esc(e.message)}
+      <br><br>
+      Check that your API token is correct and that the UID matches a form you have access to.
+      If the error mentions CORS or a network issue, make sure the KoboToolbox server URL in ⚙️ Settings is exactly right (including <code>https://</code>).
     </div>`;
   }
   btn.textContent='Load Form';btn.disabled=false;
@@ -618,7 +597,7 @@ async function startPush(){
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
-      msg=e.message==='Failed to fetch'?'CORS error — make sure to open via local server (python3 -m http.server 8080)':e.message;
+      msg=e.message;
     }
     results.push({label:sub.label,ok,status,msg});
     document.getElementById('resItems').innerHTML+=`<div class="res-item">
