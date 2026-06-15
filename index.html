@@ -184,7 +184,7 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <div class="alert alert-a" id="modeHint" style="font-size:12px;"></div>
       <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <span style="font-size:12px;color:var(--dim);">Not sure what columns to use?</span>
-        <button class="btn btn-outline" onclick="downloadTemplate()" style="font-size:12px;padding:6px 12px;">⬇ Download CSV Template</button>
+        <button class="btn btn-outline" onclick="downloadTemplate()" style="font-size:12px;padding:6px 12px;">⬇ Download Excel Template</button>
       </div>
       <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
         <div class="dz-icon">📂</div>
@@ -556,10 +556,31 @@ function buildXML(enrollData,repMap){
 
 function getSubmissions(){
   if(S.mode==='batch'&&S.repeats.length>0){
-    const enrollData={};
-    for(const f of S.fields.filter(f=>!f.repeatGroup))enrollData[f.name]=getVal(S.fileRows[0],f.name);
-    const repMap={};repMap[S.selRepeat]=S.fileRows;
-    return[{label:`All ${S.fileRows.length} rows → 1 submission`,xml:buildXML(enrollData,repMap)}];
+    // Check whether batch_number is mapped to a column
+    const batchCol=Object.entries(S.colMap).find(([,v])=>v==='batch_number')?.[0];
+    if(batchCol){
+      // Group rows by their batch_number value — one submission per unique batch
+      const groups={};const order=[];
+      for(const row of S.fileRows){
+        const bn=String(row[batchCol]||'').trim()||'Unknown';
+        if(!groups[bn]){groups[bn]=[];order.push(bn);}
+        groups[bn].push(row);
+      }
+      return order.map(bn=>{
+        const rows=groups[bn];
+        const enrollData={};
+        for(const f of S.fields.filter(f=>!f.repeatGroup))
+          enrollData[f.name]=getVal(rows[0],f.name);
+        const repMap={};repMap[S.selRepeat]=rows;
+        return{label:`Batch ${bn} (${rows.length} student${rows.length===1?'':'s'})`,xml:buildXML(enrollData,repMap),batchNum:bn,count:rows.length};
+      });
+    }else{
+      // No batch_number mapped — treat all rows as one submission (original behaviour)
+      const enrollData={};
+      for(const f of S.fields.filter(f=>!f.repeatGroup))enrollData[f.name]=getVal(S.fileRows[0],f.name);
+      const repMap={};repMap[S.selRepeat]=S.fileRows;
+      return[{label:`All ${S.fileRows.length} rows → 1 submission`,xml:buildXML(enrollData,repMap)}];
+    }
   }else{
     return S.fileRows.map((row,i)=>{
       const name=getVal(row,'first_name')||getVal(row,'full_name')||`Row ${i+1}`;
@@ -570,16 +591,32 @@ function getSubmissions(){
 
 function buildPushSummary(){
   const subs=getSubmissions();
+  const batchCol=Object.entries(S.colMap).find(([,v])=>v==='batch_number')?.[0];
+  const isBatchGrouped=S.mode==='batch'&&S.repeats.length>0&&batchCol;
+
+  let batchBreakdown='';
+  if(isBatchGrouped){
+    batchBreakdown=`<div style="margin:10px 0;border:1px solid var(--gbdr);border-radius:7px;overflow:hidden;">
+      <div style="background:var(--gbg);padding:7px 12px;font-size:11px;font-weight:700;color:var(--green);letter-spacing:.06em;text-transform:uppercase;">Detected Batches</div>
+      ${subs.map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 12px;border-top:1px solid var(--bdr2);font-size:13px;">
+        <span style="font-weight:600;">Batch ${s.batchNum}</span>
+        <span style="color:var(--muted);">${s.count} student${s.count===1?'':'s'} → 1 submission</span>
+      </div>`).join('')}
+    </div>`;
+  }
+
   document.getElementById('pushSummary').innerHTML=`
     <div class="g2" style="margin-bottom:14px;">
       <div class="stat"><div class="stat-v" style="color:var(--green)">${subs.length}</div><div class="stat-l">Submission${subs.length===1?'':'s'}</div></div>
       <div class="stat"><div class="stat-v" style="color:var(--amber)">${S.fileRows.length}</div><div class="stat-l">Total Rows</div></div>
     </div>
-    <div class="alert alert-a" style="font-size:12px;">
-      ${S.mode==='batch'&&S.repeats.length>0
-        ?`<strong>Batch:</strong> ${S.fileRows.length} rows → 1 submission, repeat group: <strong>${S.selRepeat}</strong>`
-        :`<strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions`}
-    </div>
+    ${isBatchGrouped
+      ?`<div class="alert alert-g" style="font-size:12px;">✅ <strong>Auto-grouped by batch_number</strong> — ${subs.length} batch${subs.length===1?'':'es'} detected from ${S.fileRows.length} rows.</div>`
+      :S.mode==='batch'&&S.repeats.length>0
+        ?`<div class="alert alert-a" style="font-size:12px;"><strong>Batch:</strong> ${S.fileRows.length} rows → 1 submission. Tip: map the <code>batch_number</code> column to auto-split multiple batches.</div>`
+        :`<div class="alert alert-a" style="font-size:12px;"><strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions</div>`
+    }
+    ${batchBreakdown}
     <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/api/v1/submissions</code></div>`;
 }
 
@@ -626,31 +663,88 @@ async function startPush(){
 function downloadTemplate(){
   if(!S.fields.length)return;
   const isBatch=S.mode==='batch'&&S.repeats.length>0;
+  const formName=S.form?.name||'kobo';
 
-  let headers,note;
+  // Build column definitions
+  const enrollFields=isBatch?S.fields.filter(f=>!f.repeatGroup):S.fields;
+  const repeatFields=isBatch?S.fields.filter(f=>f.repeatGroup===S.selRepeat):[];
+  const allFields=[...enrollFields,...repeatFields];
+  const nb=enrollFields.length;
+
+  // ── SheetJS workbook ─────────────────────────────────────────
+  const wb=XLSX.utils.book_new();
+
+  // ── Sheet 1: Data template ────────────────────────────────────
+  const rows=[];
+
+  // Row 0: section header labels
   if(isBatch){
-    // Enrollment-level fields (top row) + repeat fields (one per student)
-    const enrollFields=S.fields.filter(f=>!f.repeatGroup).map(f=>f.name);
-    const repeatFields=S.fields.filter(f=>f.repeatGroup===S.selRepeat).map(f=>f.name);
-    // Template has enroll fields once, repeat fields repeated per student row
-    headers=[...enrollFields,...repeatFields];
-    note=`# BATCH MODE: Fill enrollment fields (${enrollFields.join(', ')}) in row 1 only.\n`+
-         `# Each subsequent row = one student (use repeat fields: ${repeatFields.join(', ')}).\n`;
-  }else{
-    headers=S.fields.map(f=>f.name);
-    note=`# PER-ROW MODE: Each row = one independent submission.\n`;
+    const secRow=Array(allFields.length).fill('');
+    secRow[0]=`BATCH INFO — fill once per batch (columns A–${XLSX.utils.encode_col(nb-1)})`;
+    if(repeatFields.length)secRow[nb]=`STUDENT DETAILS — one row per student (columns ${XLSX.utils.encode_col(nb)}–${XLSX.utils.encode_col(allFields.length-1)})`;
+    rows.push(secRow);
   }
 
-  const csvRows=[
-    note.split('\n').filter(Boolean).map(l=>l).join('\n'),
-    headers.map(h=>'"'+h+'"').join(','),
-    headers.map(()=>'""').join(',')   // one blank example row
+  // Row 1: human-readable labels (use label if available, else name)
+  rows.push(allFields.map(f=>f.label||f.name));
+
+  // Row 2: field names (for reference)
+  rows.push(allFields.map(f=>`field: ${f.name}`));
+
+  // Row 3: blank example row
+  rows.push(allFields.map(()=>''));
+
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+
+  // Column widths — wider for name/label/address fields
+  ws['!cols']=allFields.map(f=>{
+    const n=f.name.toLowerCase();
+    if(n.includes('name')||n.includes('address')||n.includes('course')||n.includes('lab'))return{wch:24};
+    if(n.includes('date')||n.includes('mobile')||n.includes('email'))return{wch:18};
+    return{wch:14};
+  });
+
+  // Merge section header cells
+  if(isBatch&&rows.length>3){
+    ws['!merges']=[
+      {s:{r:0,c:0},e:{r:0,c:nb-1}},
+      ...(repeatFields.length?[{s:{r:0,c:nb},e:{r:0,c:allFields.length-1}}]:[])
+    ];
+  }
+
+  XLSX.utils.book_append_sheet(wb,ws,'Registration Data');
+
+  // ── Sheet 2: How to Fill ──────────────────────────────────────
+  const help=[
+    ['HOW TO FILL THIS TEMPLATE',''],
+    ['',''],
+    ['STEP 1','Load this file into KoboSync → Upload File step.'],
+    ['STEP 2', isBatch
+      ?`Fill BATCH INFO columns (A–${XLSX.utils.encode_col(nb-1)}) once — same values for every row in a batch.`
+      :'Fill every column — each row becomes one submission.'],
+    ['STEP 3', isBatch
+      ?`Fill STUDENT DETAILS columns (${XLSX.utils.encode_col(nb)} onward) — one row per student.`
+      :'Add as many rows as needed.'],
+    ['STEP 4', isBatch
+      ?'To include multiple batches, just keep adding rows — the tool auto-splits by batch_number.'
+      :''],
+    ['STEP 5','Save as .xlsx and upload to KoboSync.'],
+    ['',''],
+    ['TIPS',''],
+    ['Dates','Use YYYY-MM-DD format  e.g. 2025-06-15'],
+    ['Mobile numbers','10 digits, no spaces or dashes  e.g. 9876543210'],
+    ['Fee / amount fields','Numbers only, no ₹ symbol  e.g. 2500'],
+    ['Multiple batches', isBatch?'Add a batch_number column — the tool groups rows with the same number into one submission.':'n/a'],
+    ['',''],
+    ['FIELDS IN THIS FORM',''],
+    ...allFields.map(f=>[f.label||f.name, `field name: ${f.name}  |  type: ${f.type||'text'}`]),
   ];
-  const csv=csvRows.join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download=`${S.form?.name||'kobo'}_template.csv`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  const wsHelp=XLSX.utils.aoa_to_sheet(help);
+  wsHelp['!cols']=[{wch:22},{wch:70}];
+  XLSX.utils.book_append_sheet(wb,wsHelp,'How to Fill');
+
+  // ── Download ──────────────────────────────────────────────────
+  XLSX.writeFile(wb,`${formName}_template.xlsx`);
 }
 
 function downloadXMLs(){
