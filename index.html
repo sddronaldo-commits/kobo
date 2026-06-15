@@ -621,7 +621,7 @@ function buildPushSummary(){
         :`<div class="alert alert-a" style="font-size:12px;"><strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions</div>`
     }
     ${batchBreakdown}
-    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/api/v1/submissions</code></div>`;
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/api/v2/assets/${S.form?.uid}/submission/</code></div>`;
 }
 
 async function startPush(){
@@ -641,7 +641,8 @@ async function startPush(){
     try{
       const fd=new FormData();
       fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
-      const r=await fetch(PROXY+encodeURIComponent(`${CFG.server}/api/v1/submissions`),{
+      const endpoint=`${CFG.server}/api/v2/assets/${S.form.uid}/submission/`;
+      const r=await fetch(PROXY+encodeURIComponent(endpoint),{
         method:'POST',headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'},body:fd
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
