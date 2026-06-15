@@ -121,6 +121,11 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <input class="inp" id="cfgToken" type="password" placeholder="Paste your API token…" />
       <div class="helper">Get it at: <strong>[your server]/token/</strong></div>
     </div>
+    <div class="fg">
+      <label class="lbl">Username (for submission endpoint)</label>
+      <input class="inp" id="cfgUsername" placeholder="your KoboToolbox username" />
+      <div class="helper">Auto-detected on form load, or enter manually.</div>
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-green" onclick="saveSettings()">Save</button>
@@ -239,7 +244,7 @@ code{background:var(--surf2);padding:1px 5px;border-radius:3px;font-size:12px;}
       <div class="action-bar">
         <button class="btn btn-outline" id="s4back" onclick="goStep(3)">← Back</button>
         <div class="row">
-          <button class="btn btn-outline" onclick="downloadXMLs()">⬇ Download JSON</button>
+          <button class="btn btn-outline" onclick="downloadXMLs()">⬇ Download XML</button>
           <button class="btn btn-green" id="pushBtn" onclick="startPush()">Push to KoboToolbox →</button>
         </div>
       </div>
@@ -358,29 +363,20 @@ async function loadForm(){
       <div style="margin-top:8px">${S.fields.map(f=>`<span class="chip ${f.repeatGroup?'chip-a':'chip-g'}" title="${f.name}">${f.label||f.name}</span>`).join('')}</div>`;
     document.getElementById('formNameBadge').textContent=d.name;
 
-    // Look up the form on KoboCAT to get the exact identifier KC uses for submissions
+    // Fetch username — needed for /{username}/submission endpoint
     try{
-      const kcR=await fetch(PROXY+encodeURIComponent(`${getKCServer(CFG.server)}/api/v1/forms/`),{
+      const profR=await fetch(PROXY+encodeURIComponent(`${CFG.server}/api/v1/profiles/me/`),{
         headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'}
       });
-      if(kcR.ok){
-        const kcForms=await kcR.json();
-        console.log('[KoboSync] KC forms available:',kcForms.map(f=>f.id_string+'('+f.formid+')'));
-        const match=kcForms.find(f=>f.id_string===idStr||f.id_string===uid||String(f.formid)===uid);
-        if(match){
-          S.form.kcIdString=match.id_string;
-          S.form.kcFormId=match.formid;
-          res.innerHTML+=`<div class="alert alert-g" style="margin-top:8px;font-size:12px;">✅ Found on KoboCAT: <code>${match.id_string}</code> (formid: ${match.formid})</div>`;
-          console.log('[KoboSync] Matched KC form:',match.id_string,match.formid);
-        }else{
-          S.form.kcIdString=null;
-          res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Form not found on KoboCAT — available: ${kcForms.map(f=>f.id_string).join(', ')||'none'}</div>`;
-        }
+      if(profR.ok){
+        const prof=await profR.json();
+        S.form.username=prof.username||'';
+        res.innerHTML+=`<div class="alert alert-g" style="margin-top:8px;font-size:12px;">👤 Submitting as <strong>${S.form.username}</strong> → <code>${CFG.server}/${S.form.username}/submission</code></div>`;
       }else{
-        res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Could not reach KoboCAT (${kcR.status}) — will attempt submission anyway.</div>`;
+        res.innerHTML+=`<div class="alert alert-a" style="margin-top:8px;font-size:12px;">⚠️ Could not fetch username — enter it manually in ⚙️ Settings.</div>`;
       }
     }catch(e){
-      console.warn('[KoboSync] KC lookup error:',e.message);
+      console.warn('[KoboSync] Profile error:',e);
     }
 
     setTimeout(()=>goStep(2),1200);
@@ -541,23 +537,19 @@ function getVal(row,field){
   return'';
 }
 
-function buildJSON(enrollData,repMap){
-  const id=uuid();
-  const sub={};
-
-  // Enrollment-level fields
+function buildXML(enrollData,repMap){
+  const instId=uuid();
+  const uid=S.form.uid;
+  let xml=`<?xml version='1.0' ?>\n<data id="${uid}">\n`;
   for(const f of S.fields.filter(f=>!f.repeatGroup)){
     let v=getVal(enrollData,f.name);
     if(f.name==='num_students'&&S.mode==='batch')v=String(S.fileRows.length);
     if(f.name.includes('date'))v=fmtDate(v);
-    sub[f.name]=v;
+    xml+=`  <${f.name}>${esc(v)}</${f.name}>\n`;
   }
-
-  // Repeat groups
   for(const [groupName,rows] of Object.entries(repMap)){
     const fph=parseFloat(getVal(enrollData,'fee_per_head')||0);
-    sub[groupName]=rows.map(row=>{
-      const student={};
+    for(const row of rows){
       const fn=getVal(row,'first_name'),mn=getVal(row,'middle_name'),ln=getVal(row,'last_name');
       const fullName=[fn,mn,ln].filter(Boolean).join(' ').toUpperCase().replace(/\s+/g,' ').trim();
       const mob=(getVal(row,'mobile_number')||'').replace(/\D/g,'');
@@ -566,21 +558,18 @@ function buildJSON(enrollData,repMap){
       const paid=getVal(enrollData,'fee_paid')||total;
       const pending=(parseFloat(total)-parseFloat(paid)).toFixed(0);
       const computed={full_name:fullName,student_id:sid,total_fee:total,pending_balance:pending};
+      xml+=`  <${groupName}>\n`;
       for(const f of S.fields.filter(f=>f.repeatGroup===groupName)){
         let v=computed[f.name]!==undefined?computed[f.name]:getVal(row,f.name);
         if(f.name.includes('date'))v=fmtDate(v);
-        student[f.name]=v;
+        xml+=`    <${f.name}>${esc(v)}</${f.name}>\n`;
       }
-      return student;
-    });
+      xml+=`  </${groupName}>\n`;
+    }
   }
-
-  sub['meta']={instanceID:`uuid:${id}`};
-  // Use the id_string KoboCAT returned during form lookup, fall back to idString then uid
-  const kcId=S.form.kcIdString||S.form.idString||S.form.uid;
-  return{id:kcId,submission:sub,_debug:{kcId,uid:S.form.uid,idString:S.form.idString}};
+  xml+=`  <meta>\n    <instanceID>uuid:${instId}</instanceID>\n  </meta>\n</data>`;
+  return xml;
 }
-
 function getSubmissions(){
   if(S.mode==='batch'&&S.repeats.length>0){
     // Check whether batch_number is mapped to a column
@@ -603,19 +592,19 @@ function getSubmissions(){
         for(const f of S.fields.filter(f=>!f.repeatGroup))
           enrollData[f.name]=getVal(rows[0],f.name);
         const repMap={};repMap[S.selRepeat]=rows;
-        return{label:`Batch ${bn} (${rows.length} student${rows.length===1?'':'s'})`,json:buildJSON(enrollData,repMap),batchNum:bn,count:rows.length};
+        return{label:`Batch ${bn} (${rows.length} student${rows.length===1?'':'s'})`,xml:buildXML(enrollData,repMap),batchNum:bn,count:rows.length};
       });
     }else{
       // No batch_number mapped — treat all rows as one submission (original behaviour)
       const enrollData={};
       for(const f of S.fields.filter(f=>!f.repeatGroup))enrollData[f.name]=getVal(S.fileRows[0],f.name);
       const repMap={};repMap[S.selRepeat]=S.fileRows;
-      return[{label:`All ${S.fileRows.length} rows → 1 submission`,json:buildJSON(enrollData,repMap)}];
+      return[{label:`All ${S.fileRows.length} rows → 1 submission`,xml:buildXML(enrollData,repMap)}];
     }
   }else{
     return S.fileRows.map((row,i)=>{
       const name=getVal(row,'first_name')||getVal(row,'full_name')||`Row ${i+1}`;
-      return{label:name,json:buildJSON(row,{})};
+      return{label:name,xml:buildXML(row,{})};
     });
   }
 }
@@ -648,7 +637,7 @@ function buildPushSummary(){
         :`<div class="alert alert-a" style="font-size:12px;"><strong>Per-Row:</strong> ${S.fileRows.length} rows → ${S.fileRows.length} submissions</div>`
     }
     ${batchBreakdown}
-    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${getKCServer(CFG.server)}/api/v1/submissions</code></div>`;
+    <div style="margin:10px 0;font-size:12px;color:var(--muted);">Endpoint: <code>${CFG.server}/${S.form?.username||CFG.username||'?'}/submission</code></div>`;
 }
 
 async function startPush(){
@@ -673,12 +662,15 @@ async function startPush(){
     document.getElementById('progTxt').textContent=`${i+1}/${subs.length} — ${sub.label}`;
     let ok=false,status='',msg='';
     try{
-      const kcServer=getKCServer(CFG.server);
-      const endpoint=`${kcServer}/api/v1/submissions`;
+      const username=S.form?.username||CFG.username;
+      if(!username)throw new Error('Username not found — reload the form or enter it in ⚙️ Settings');
+      const endpoint=`${CFG.server}/${username}/submission`;
+      const fd=new FormData();
+      fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
       const r=await fetch(PROXY+encodeURIComponent(endpoint),{
         method:'POST',
-        headers:{'Authorization':`Token ${CFG.token}`,'Content-Type':'application/json','x-requested-with':'XMLHttpRequest'},
-        body:(()=>{const p=JSON.parse(JSON.stringify(sub.json));delete p._debug;return JSON.stringify(p);})()
+        headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'},
+        body:fd
       });
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
@@ -792,12 +784,12 @@ function downloadXMLs(){
   subs.forEach((s,i)=>{
     const safe=s.label.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
     const payload=JSON.parse(JSON.stringify(s.json));delete payload._debug;
-    setTimeout(()=>dl(JSON.stringify(payload,null,2),subs.length===1?'submission.json':`submission_${i+1}_${safe}.json`),i*150);
+    setTimeout(()=>dl(JSON.stringify(payload,null,2),subs.length===1?'submission.json':`submission_${i+1}_${safe}.xml`),i*150);
   });
 }
 function dl(content,name){
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([content],{type:'application/json'}));
+  a.href=URL.createObjectURL(new Blob([content],{type:'text/xml'}));
   a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
