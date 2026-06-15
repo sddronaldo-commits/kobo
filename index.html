@@ -639,13 +639,13 @@ function buildPushSummary(){
 
 async function startPush(){
   const subs=getSubmissions();
-  // Show first payload in console for debugging
-  if(subs.length>0){
-    const preview=JSON.parse(JSON.stringify(subs[0].json));
-    delete preview._debug;
-    console.log('[KoboSync] Payload preview:', JSON.stringify(preview,null,2));
-    console.log('[KoboSync] id field:', subs[0].json.id, '| idString:', S.form.idString, '| uid:', S.form.uid);
-  }
+  if(!subs.length)return;
+
+  // Guard against stale state before touching the DOM
+  const username=S.form?.username||CFG.username;
+  if(!username){alert('Username not set — load the form again or enter it in ⚙️ Settings');return;}
+  if(!subs[0].xml){alert('XML is empty — go back and check column mapping.');return;}
+
   document.getElementById('pushProg').classList.remove('hidden');
   document.getElementById('pushRes').classList.remove('hidden');
   document.getElementById('pushBtn').disabled=true;
@@ -659,19 +659,18 @@ async function startPush(){
     document.getElementById('progTxt').textContent=`${i+1}/${subs.length} — ${sub.label}`;
     let ok=false,status='',msg='';
     try{
-      const username=S.form?.username||CFG.username;
-      if(!username)throw new Error('Username not found — reload the form or enter it in ⚙️ Settings');
       const endpoint=`${CFG.server}/${username}/submission`;
       const fd=new FormData();
       fd.append('xml_submission_file',new Blob([sub.xml],{type:'text/xml'}),'submission.xml');
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>ctrl.abort(),30000);
       const r=await fetch(PROXY+encodeURIComponent(endpoint),{
-        method:'POST',
-        headers:{'Authorization':`Token ${CFG.token}`,'x-requested-with':'XMLHttpRequest'},
-        body:fd
+        method:'POST',headers:{'Authorization':`Token ${CFG.token}`},body:fd,signal:ctrl.signal
       });
+      clearTimeout(timer);
       status=String(r.status);msg=await r.text();ok=r.status===201||r.status===202;
     }catch(e){
-      msg=e.message;
+      msg=e.name==='AbortError'?'Timed out after 30s — check network':e.message;
     }
     results.push({label:sub.label,ok,status,msg});
     document.getElementById('resItems').innerHTML+=`<div class="res-item">
